@@ -1,0 +1,38 @@
+{
+  "name": "cubloc2",
+  "displayName": "cubloc2",
+  "description": "CUBLOC2 support for Visual Studio Code",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.108.1"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "cubloc-basic",
+        "aliases": [
+          "CUBLOC BASIC",
+          "cubloc-basic"
+        ],
+        "extensions": [
+          ".bas"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "cubloc-basic",
+        "scopeName": "source.cubloc-basic",
+        "path": "./syntaxes/cubloc-basic.tmLanguage.json"
+      }
+    ]
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1",
+    "vscode-languageserver": "^9.0.1"
+  }
+}

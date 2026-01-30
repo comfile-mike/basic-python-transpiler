@@ -1,0 +1,195 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "CUBLOC BASIC",
+  "scopeName": "source.cubloc-basic",
+  "fileTypes": ["bas"],
+  "patterns": [
+    { "include": "#line_numbers" },
+    { "include": "#preprocessor" },
+    { "include": "#strings" },
+    { "include": "#comments" },
+    { "include": "#declarations" },
+    { "include": "#keywords" },
+    { "include": "#types" },
+    { "include": "#constants" },
+    { "include": "#functions" },
+    { "include": "#operators" },
+    { "include": "#labels" },
+    { "include": "#numbers" }
+  ],
+  "repository": {
+    "line_numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.linenumber.cubloc-basic",
+          "match": "^\\s*(\\d+)\\b"
+        }
+      ]
+    },
+
+    "preprocessor": {
+      "patterns": [
+        {
+          "name": "meta.preprocessor.cubloc-basic",
+          "match": "^\\s*(?i:(#\\s*(?:include|define|undef|if|elseif|else|endif|region|end\\s+region|pragma)\\b|\\$\\s*(?:include|dynamic|static|compile|error|lib)\\b)).*$"
+        }
+      ]
+    },
+
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.cubloc-basic",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.cubloc-basic",
+              "match": "\"\""
+            }
+          ]
+        }
+      ]
+    },
+
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.rem.cubloc-basic",
+          "match": "(?i:\\bREM\\b).*$"
+        },
+        {
+          "name": "comment.line.apostrophe.cubloc-basic",
+          "match": "'[^\"]*$"
+        }
+      ]
+    },
+
+    "labels": {
+      "patterns": [
+        {
+          "name": "entity.name.label.cubloc-basic",
+          "match": "^\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*:\\s*"
+        }
+      ]
+    },
+
+    "declarations": {
+      "patterns": [
+        {
+          "match": "(?i:\\bSUB)\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\s*\\(|\\b)",
+          "captures": {
+            "0": { "name": "meta.declaration.sub.cubloc-basic" },
+            "1": { "name": "entity.name.function.cubloc-basic" }
+          }
+        },
+        {
+          "match": "(?i:\\bFUNCTION)\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\s*\\(|\\b)",
+          "captures": {
+            "0": { "name": "meta.declaration.function.cubloc-basic" },
+            "1": { "name": "entity.name.function.cubloc-basic" }
+          }
+        },
+        {
+          "match": "(?i:\\bDEF)\\s+(?i:FN)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {
+            "0": { "name": "meta.declaration.function.cubloc-basic" },
+            "1": { "name": "entity.name.function.cubloc-basic" }
+          }
+        },
+        {
+          "match": "(?i:\\bTYPE)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {
+            "0": { "name": "meta.declaration.type.cubloc-basic" },
+            "1": { "name": "entity.name.type.cubloc-basic" }
+          }
+        },
+        {
+          "match": "(?i:\\bCONST)\\s+([A-Za-z_][A-Za-z0-9_]*[$%&!#@]?)",
+          "captures": {
+            "0": { "name": "meta.declaration.constant.cubloc-basic" },
+            "1": { "name": "constant.other.cubloc-basic" }
+          }
+        }
+      ]
+    },
+
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.cubloc-basic",
+          "match": "(?ix)\\b( if|then|else|elseif|endif| end\\s+if|end\\s+select|end\\s+sub|end\\s+function|end\\s+type|end\\s+with| select|case| for|to|step|next| while|wend|do|loop|until|exit| goto|gosub|return| on|error|resume| dim|redim|as| let|set| input|print|read|data|restore| open|close|put|get|write| call| with| stop|end )\\b"
+        },
+        {
+          "name": "keyword.other.declaration.cubloc-basic",
+          "match": "(?i:\\b(?:option\\s+explicit|option\\s+base|declare|public|private|shared|static|global|local|byval|byref|alias|lib)\\b)"
+        }
+      ]
+    },
+
+    "types": {
+      "patterns": [
+        {
+          "name": "support.type.cubloc-basic",
+          "match": "(?i:\\b(?:integer|long|single|double|string|boolean|byte|short|date|variant|object)\\b)"
+        }
+      ]
+    },
+
+    "constants": {
+      "patterns": [
+        {
+          "name": "constant.language.cubloc-basic",
+          "match": "(?i:\\b(?:true|false|null|nothing)\\b)"
+        }
+      ]
+    },
+
+    "functions": {
+      "patterns": [
+        {
+          "name": "support.function.cubloc-basic",
+          "match": "(?ix)\\b( abs|asc|atn|chr\\$|cint|clng|csng|cdbl|cos|sin|tan| date\\$|time\\$|timer| exp|log|sqr|rnd|randomize| fix|int| left\\$|right\\$|mid\\$|len|instr|lcase\\$|ucase\\$|ltrim\\$|rtrim\\$|trim\\$| hex\\$|oct\\$|str\\$|val| eof|loc|lof|seek| space\\$|string\\$ )\\b"
+        }
+      ]
+    },
+
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.cubloc-basic",
+          "match": "(?i:\\b(?:and|or|not|xor|mod|eqv|imp)\\b)"
+        },
+        {
+          "name": "keyword.operator.cubloc-basic",
+          "match": "(?:\\+|-|\\*|/|\\\\|\\^|=|&|<>|<=|>=|<|>)"
+        }
+      ]
+    },
+
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.hex.cubloc-basic",
+          "match": "(?i:\\b&H[0-9A-F]+)\\b"
+        },
+        {
+          "name": "constant.numeric.octal.cubloc-basic",
+          "match": "(?i:\\b&O[0-7]+)\\b"
+        },
+        {
+          "name": "constant.numeric.binary.cubloc-basic",
+          "match": "(?i:\\b&B[01]+)\\b"
+        },
+        {
+          "name": "constant.numeric.float.cubloc-basic",
+          "match": "\\b\\d+\\.\\d+(?:[eE][+-]?\\d+)?[!#]?\\b"
+        },
+        {
+          "name": "constant.numeric.integer.cubloc-basic",
+          "match": "\\b\\d+(?:[eE][+-]?\\d+)?[%&]?\\b"
+        }
+      ]
+    }
+  }
+}
