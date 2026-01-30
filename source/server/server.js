@@ -28,6 +28,7 @@ connection.onInitialize(() => {
         resolveProvider: false,
         triggerCharacters: [" "],
       },
+      hoverProvider: true,
       textDocumentSync: TextDocumentSyncKind.Full,
     },
   };
@@ -37,7 +38,10 @@ connection.onCompletion(() => {
   return [
     { label: "LET", kind: 14, detail: "Assign a value" },
     { label: "PRINT", kind: 14, detail: "Print to output" },
-    { label: "INPUT", kind: 14, detail: "Read input" },
+    { label: "INPUT", kind: 14, detail: "Set port to input mode" },
+    { label: "DEBUG", kind: 14, detail: "Debug output" },
+    { label: "DELAY", kind: 14, detail: "Pause in milliseconds" },
+    { label: "OUTPUT", kind: 14, detail: "Set port to output mode" },
     { label: "IF", kind: 14, detail: "Start conditional" },
     { label: "THEN", kind: 14, detail: "Conditional branch" },
     { label: "ELSE", kind: 14, detail: "Conditional branch" },
@@ -71,6 +75,31 @@ connection.onDidChangeTextDocument((params) => {
 connection.onDidCloseTextDocument((params) => {
   documents.delete(params.textDocument.uri);
   connection.sendDiagnostics({ uri: params.textDocument.uri, diagnostics: [] });
+});
+
+connection.onHover((params) => {
+  const text = documents.get(params.textDocument.uri);
+  if (!text) {
+    return null;
+  }
+
+  const lineText = text.split(/\r?\n/)[params.position.line] ?? "";
+  const word = getWordAt(lineText, params.position.character);
+  if (!word) {
+    return null;
+  }
+
+  const info = HOVER_DOCS[word];
+  if (!info) {
+    return null;
+  }
+
+  return {
+    contents: {
+      kind: "markdown",
+      value: info,
+    },
+  };
 });
 
 function validateText(uri, text) {
@@ -168,6 +197,33 @@ function getTokens(line) {
   }
 
   return tokens;
+}
+
+function getWordAt(line, character) {
+  if (character < 0 || character > line.length) {
+    return null;
+  }
+
+  let start = character;
+  while (start > 0 && /[A-Za-z0-9_]/.test(line[start - 1])) {
+    start -= 1;
+  }
+
+  let end = character;
+  while (end < line.length && /[A-Za-z0-9_]/.test(line[end])) {
+    end += 1;
+  }
+
+  if (start === end) {
+    return null;
+  }
+
+  const word = line.slice(start, end);
+  if (!/^[A-Za-z_]/.test(word)) {
+    return null;
+  }
+
+  return word.toUpperCase();
 }
 
 function validateSyntaxLine(tokens, lineNumber, line, diagnostics, stack) {
@@ -309,6 +365,22 @@ function validateSyntaxLine(tokens, lineNumber, line, diagnostics, stack) {
     validateOutStatement(tokens[0], cleanLine, lineNumber, diagnostics);
   }
 
+  if (first === "DEBUG") {
+    validateDebugStatement(tokens[0], cleanLine, lineNumber, diagnostics);
+  }
+
+  if (first === "INPUT") {
+    validateInputStatement(tokens[0], cleanLine, lineNumber, diagnostics);
+  }
+
+  if (first === "OUTPUT") {
+    validateOutputStatement(tokens[0], cleanLine, lineNumber, diagnostics);
+  }
+
+  if (first === "DELAY") {
+    validateDelayStatement(tokens[0], cleanLine, lineNumber, diagnostics);
+  }
+
   if (first === "DIM") {
     validateDimStatement(tokens[0], cleanLine, lineNumber, diagnostics);
   }
@@ -390,6 +462,123 @@ function validateOutStatement(keywordToken, cleanLine, lineNumber, diagnostics) 
         keywordToken.index + keywordToken.length
       ),
       message: "OUT VALUE MUST BE 0 OR 1.",
+      source: "cubloc-basic",
+    });
+  }
+}
+
+function validateDebugStatement(keywordToken, cleanLine, lineNumber, diagnostics) {
+  const afterKeyword = cleanLine.slice(keywordToken.index + keywordToken.length);
+  const remainder = afterKeyword.trim();
+
+  if (!remainder) {
+    diagnostics.push({
+      severity: DiagnosticSeverity.Error,
+      range: makeRange(
+        lineNumber,
+        keywordToken.index,
+        keywordToken.index + keywordToken.length
+      ),
+      message: "DEBUG REQUIRES DATA.",
+      source: "cubloc-basic",
+    });
+  }
+}
+
+function validateInputStatement(keywordToken, cleanLine, lineNumber, diagnostics) {
+  const afterKeyword = cleanLine.slice(keywordToken.index + keywordToken.length);
+  const remainder = afterKeyword.trim();
+
+  if (!remainder) {
+    diagnostics.push({
+      severity: DiagnosticSeverity.Error,
+      range: makeRange(
+        lineNumber,
+        keywordToken.index,
+        keywordToken.index + keywordToken.length
+      ),
+      message: "INPUT REQUIRES PORT VALUE.",
+      source: "cubloc-basic",
+    });
+    return;
+  }
+
+  const portLiteral = parseIntegerLiteral(remainder);
+  if (portLiteral !== null && (portLiteral < 0 || portLiteral > 255)) {
+    diagnostics.push({
+      severity: DiagnosticSeverity.Error,
+      range: makeRange(
+        lineNumber,
+        keywordToken.index,
+        keywordToken.index + keywordToken.length
+      ),
+      message: "INPUT PORT MUST BE 0 TO 255.",
+      source: "cubloc-basic",
+    });
+  }
+}
+
+function validateOutputStatement(keywordToken, cleanLine, lineNumber, diagnostics) {
+  const afterKeyword = cleanLine.slice(keywordToken.index + keywordToken.length);
+  const remainder = afterKeyword.trim();
+
+  if (!remainder) {
+    diagnostics.push({
+      severity: DiagnosticSeverity.Error,
+      range: makeRange(
+        lineNumber,
+        keywordToken.index,
+        keywordToken.index + keywordToken.length
+      ),
+      message: "OUTPUT REQUIRES PORT VALUE.",
+      source: "cubloc-basic",
+    });
+    return;
+  }
+
+  const portLiteral = parseIntegerLiteral(remainder);
+  if (portLiteral !== null && (portLiteral < 0 || portLiteral > 255)) {
+    diagnostics.push({
+      severity: DiagnosticSeverity.Error,
+      range: makeRange(
+        lineNumber,
+        keywordToken.index,
+        keywordToken.index + keywordToken.length
+      ),
+      message: "OUTPUT PORT MUST BE 0 TO 255.",
+      source: "cubloc-basic",
+    });
+  }
+}
+
+function validateDelayStatement(keywordToken, cleanLine, lineNumber, diagnostics) {
+  const afterKeyword = cleanLine.slice(keywordToken.index + keywordToken.length);
+  const remainder = afterKeyword.trim();
+
+  if (!remainder) {
+    diagnostics.push({
+      severity: DiagnosticSeverity.Error,
+      range: makeRange(
+        lineNumber,
+        keywordToken.index,
+        keywordToken.index + keywordToken.length
+      ),
+      message: "DELAY REQUIRES MILLISECONDS VALUE.",
+      source: "cubloc-basic",
+    });
+    return;
+  }
+
+  const literal = parseIntegerLiteral(remainder);
+  if (literal !== null && literal < 0) {
+    diagnostics.push({
+      severity: DiagnosticSeverity.Error,
+      range: makeRange(
+        lineNumber,
+        keywordToken.index,
+        keywordToken.index + keywordToken.length
+      ),
+      message: "DELAY VALUE MUST BE NON-NEGATIVE.",
       source: "cubloc-basic",
     });
   }
@@ -958,5 +1147,21 @@ function makeRange(line, start, end) {
     end: { line, character: end },
   };
 }
+
+const HOVER_DOCS = {
+  DEBUG: "**DEBUG** data\n\nSends data to the debug terminal. Use `DEC`/`HEX` for formatted numbers and `CR`/`LF` for line control.",
+  DELAY: "**DELAY** n\n\nPause for *n* milliseconds.",
+  DIM: "**DIM** name [ (dims) ] **AS** type [ * length ]\n\nDeclare a variable or array. Types: BYTE, INTEGER, LONG, SINGLE, STRING.",
+  DO: "**DO** [WHILE|UNTIL cond] … **LOOP** [WHILE|UNTIL cond]\n\nCreates a loop; condition may appear on DO or LOOP (not both).",
+  LOOP: "**LOOP** [WHILE|UNTIL cond]\n\nCloses a DO…LOOP block.",
+  IN: "**IN**(port)\n\nReads the state of a GPIO port.",
+  INPUT: "**INPUT** port\n\nSets the port to high‑Z input mode.",
+  OUT: "**OUT** port, value\n\nWrite logic 1 or 0 to the port.",
+  OUTPUT: "**OUTPUT** port\n\nSets the port mode to output.",
+  PRINT: "**PRINT** data\n\nPrint to output.",
+  LET: "**LET** var = expr\n\nAssign a value.",
+  IF: "**IF** cond **THEN** … [**ELSE** …] **ENDIF**\n\nConditional block.",
+  FOR: "**FOR** var = start **TO** end [**STEP** n] … **NEXT**\n\nCounting loop.",
+};
 
 connection.listen();

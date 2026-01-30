@@ -118,7 +118,7 @@
       "patterns": [
         {
           "name": "keyword.control.cubloc-basic",
-          "match": "(?ix)\\b( if|then|else|elseif|endif| end\\s+if|end\\s+select|end\\s+sub|end\\s+function|end\\s+type|end\\s+with| select|case| for|to|step|next| while|wend|do|loop|until|exit| goto|gosub|return| on|error|resume| dim|redim|as| let|set| input|print|read|data|restore| open|close|put|get|write| call| with| stop|end )\\b"
+          "match": "(?ix)\\b( if|then|else|elseif|endif| end\\s+if|end\\s+select|end\\s+sub|end\\s+function|end\\s+type|end\\s+with| select|case| for|to|step|next| while|wend|do|loop|until|exit| goto|gosub|return| on|error|resume| dim|redim|as| let|set| print|read|data|restore| open|close|put|get|write| call| with| stop|end )\\b"
         },
         {
           "name": "keyword.other.declaration.cubloc-basic",
