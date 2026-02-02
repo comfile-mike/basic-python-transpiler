@@ -4,11 +4,13 @@ const path = require("path");
 const vscode = require("vscode");
 const { LanguageClient, TransportKind } = require("vscode-languageclient/node");
 const { transpileBasToPython } = require("./transpiler");
+const { defaultLadderXml, getLadderWebviewHtml } = require("./ladderWebview");
 
 let client;
 let transpileController;
 let transpileTimer;
 let debugProvider;
+let ladderProvider;
 
 function activate(context) {
   const serverModule = context.asAbsolutePath(path.join("server", "server.js"));
@@ -103,6 +105,18 @@ function activate(context) {
     }
   );
   context.subscriptions.push(debugProvider);
+
+  ladderProvider = new LadderDiagramEditorProvider(context);
+  context.subscriptions.push(
+    vscode.window.registerCustomEditorProvider(
+      LadderDiagramEditorProvider.viewType,
+      ladderProvider,
+      {
+        webviewOptions: { retainContextWhenHidden: true },
+        supportsMultipleEditorsPerDocument: false,
+      }
+    )
+  );
 }
 
 function deactivate() {
@@ -232,3 +246,153 @@ module.exports = {
   activate,
   deactivate,
 };
+
+class LadderDiagramDocument {
+  constructor(uri, xml) {
+    this.uri = uri;
+    this._xml = xml;
+    this._onDidDispose = new vscode.EventEmitter();
+    this._onDidChangeContent = new vscode.EventEmitter();
+  }
+
+  static async create(uri) {
+    let xml = defaultLadderXml();
+    try {
+      const raw = await vscode.workspace.fs.readFile(uri);
+      const text = Buffer.from(raw).toString("utf8");
+      xml = text.trim() ? text : defaultLadderXml();
+    } catch (error) {
+      // If the file doesn't exist yet, start with the default XML.
+    }
+    return new LadderDiagramDocument(uri, xml);
+  }
+
+  get xml() {
+    return this._xml;
+  }
+
+  update(xml) {
+    this._xml = xml;
+    this._onDidChangeContent.fire(this);
+  }
+
+  dispose() {
+    this._onDidDispose.fire();
+    this._onDidDispose.dispose();
+    this._onDidChangeContent.dispose();
+  }
+
+  get onDidDispose() {
+    return this._onDidDispose.event;
+  }
+
+  get onDidChangeContent() {
+    return this._onDidChangeContent.event;
+  }
+}
+
+class LadderDiagramEditorProvider {
+  static viewType = "cubloc-ladder";
+
+  constructor(context) {
+    this.context = context;
+    this._onDidChangeCustomDocument = new vscode.EventEmitter();
+  }
+
+  get onDidChangeCustomDocument() {
+    return this._onDidChangeCustomDocument.event;
+  }
+
+  async openCustomDocument(uri) {
+    return LadderDiagramDocument.create(uri);
+  }
+
+  async resolveCustomEditor(document, webviewPanel) {
+    webviewPanel.webview.options = {
+      enableScripts: true,
+    };
+
+    webviewPanel.webview.html = getLadderWebviewHtml(webviewPanel.webview);
+
+    const updateWebview = () => {
+      webviewPanel.webview.postMessage({ type: "update", xml: document.xml });
+    };
+
+    const disposable = document.onDidChangeContent(() => {
+      updateWebview();
+    });
+
+    webviewPanel.onDidDispose(() => {
+      disposable.dispose();
+    });
+
+    webviewPanel.webview.onDidReceiveMessage((message) => {
+      if (!message || typeof message !== "object") {
+        return;
+      }
+      if (message.type === "ready") {
+        updateWebview();
+        return;
+      }
+      if (message.type !== "update" || typeof message.xml !== "string") {
+        return;
+      }
+      const previous = document.xml;
+      document.update(message.xml);
+      this._onDidChangeCustomDocument.fire({
+        document,
+        label: "Edit Ladder Diagram",
+        undo: () => {
+          document.update(previous);
+        },
+        redo: () => {
+          document.update(message.xml);
+        },
+      });
+    });
+  }
+
+  async saveCustomDocument(document, cancellation) {
+    if (cancellation && cancellation.isCancellationRequested) {
+      return;
+    }
+    const encoded = Buffer.from(document.xml, "utf8");
+    await vscode.workspace.fs.writeFile(document.uri, encoded);
+  }
+
+  async saveCustomDocumentAs(document, destination, cancellation) {
+    if (cancellation && cancellation.isCancellationRequested) {
+      return;
+    }
+    const encoded = Buffer.from(document.xml, "utf8");
+    await vscode.workspace.fs.writeFile(destination, encoded);
+  }
+
+  async revertCustomDocument(document, cancellation) {
+    if (cancellation && cancellation.isCancellationRequested) {
+      return;
+    }
+    const fresh = await LadderDiagramDocument.create(document.uri);
+    document.update(fresh.xml);
+  }
+
+  async backupCustomDocument(document, context, cancellation) {
+    if (cancellation && cancellation.isCancellationRequested) {
+      return { id: context.destination.toString(), delete: async () => {} };
+    }
+    const encoded = Buffer.from(document.xml, "utf8");
+    await vscode.workspace.fs.writeFile(context.destination, encoded);
+    return {
+      id: context.destination.toString(),
+      delete: async () => {
+        try {
+          await vscode.workspace.fs.delete(context.destination);
+        } catch (error) {
+          // Ignore failed cleanup.
+        }
+      },
+    };
+  }
+}
+
+

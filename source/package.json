@@ -11,7 +11,8 @@
   ],
   "main": "./extension.js",
   "activationEvents": [
-    "onLanguage:cubloc-basic"
+    "onLanguage:cubloc-basic",
+    "onCustomEditor:cubloc-ladder"
   ],
   "contributes": {
     "configurationDefaults": {
@@ -119,6 +120,18 @@
         "language": "cubloc-basic",
         "scopeName": "source.cubloc-basic",
         "path": "./syntaxes/cubloc-basic.tmLanguage.json"
+      }
+    ],
+    "customEditors": [
+      {
+        "viewType": "cubloc-ladder",
+        "displayName": "CUBLOC Ladder Diagram",
+        "selector": [
+          {
+            "filenamePattern": "*.cul"
+          }
+        ],
+        "priority": "default"
       }
     ]
   },

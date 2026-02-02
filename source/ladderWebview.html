@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'none'; style-src __CSP_SOURCE__ 'unsafe-inline'; script-src 'nonce-__NONCE__';">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CUBLOC Ladder Diagram</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      --ladder-rail: var(--vscode-editorWidget-border);
+      --ladder-cell: var(--vscode-editorWidget-background);
+      --ladder-cell-border: var(--vscode-editorWidget-border);
+      --ladder-highlight: var(--vscode-focusBorder);
+    }
+    body {
+      margin: 0;
+      height: 100vh;
+      display: grid;
+      grid-template-rows: 44px 40px 1fr 28px;
+      background: var(--vscode-editor-background);
+      color: var(--vscode-editor-foreground);
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: var(--vscode-titleBar-activeBackground);
+      border-bottom: 1px solid var(--vscode-titleBar-border, var(--vscode-editorWidget-border));
+    }
+    .topbar .icon-btn,
+    .subbar .icon-btn {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 6px;
+      border: 1px solid var(--vscode-editorWidget-border);
+      background: var(--vscode-button-secondaryBackground);
+      color: var(--vscode-button-secondaryForeground);
+      cursor: pointer;
+    }
+    .topbar .spacer {
+      flex: 1;
+    }
+    .subbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: color-mix(in srgb, var(--vscode-titleBar-activeBackground) 65%, var(--vscode-editor-background) 35%);
+      border-bottom: 1px solid var(--vscode-editorWidget-border);
+    }
+    .subbar .run-btn {
+      width: 36px;
+      height: 30px;
+      border-radius: 6px;
+      border: 1px solid var(--vscode-button-border, transparent);
+      background: var(--vscode-testing-iconPassed, #2ea043);
+      color: #ffffff;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .content {
+      display: grid;
+      grid-template-columns: var(--left-panel-width, 280px) 6px 1fr;
+      min-height: 0;
+    }
+    .left-panel {
+      border-right: 1px solid var(--vscode-editorWidget-border);
+      background: var(--vscode-sideBar-background);
+      display: grid;
+      grid-template-rows: 1fr auto;
+      min-height: 0;
+    }
+    .splitter {
+      width: 6px;
+      cursor: col-resize;
+      background: transparent;
+      border-right: 1px solid var(--vscode-editorWidget-border);
+      border-left: 1px solid var(--vscode-editorWidget-border);
+    }
+    .splitter:hover {
+      background: color-mix(in srgb, var(--vscode-focusBorder) 20%, transparent);
+    }
+    .panel-section {
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+      overflow: auto;
+    }
+    .panel-section h2 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin: 0;
+      color: var(--vscode-sideBarTitle-foreground);
+    }
+    .workspace {
+      display: grid;
+      grid-template-rows: 48px 1fr;
+      min-width: 0;
+    }
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--vscode-editorWidget-border);
+      background: var(--vscode-editor-background);
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .toolbar-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .element-bar {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .element-btn {
+      min-width: 42px;
+      height: 32px;
+      padding: 0 8px;
+      border-radius: 6px;
+      border: 1px solid var(--vscode-editorWidget-border);
+      background: var(--vscode-editorWidget-background);
+      color: var(--vscode-editor-foreground);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-family: "Consolas", "Courier New", monospace;
+    }
+    .element-btn.active {
+      outline: 2px solid var(--ladder-highlight);
+    }
+    .btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--vscode-button-border, transparent);
+      background: var(--vscode-button-background);
+      color: var(--vscode-button-foreground);
+      cursor: pointer;
+    }
+    .btn.secondary {
+      background: var(--vscode-button-secondaryBackground);
+      color: var(--vscode-button-secondaryForeground);
+    }
+    .btn.ghost {
+      background: transparent;
+      border-color: var(--vscode-editorWidget-border);
+      color: var(--vscode-editor-foreground);
+    }
+    #diagram {
+      padding: 12px 16px 24px 16px;
+      overflow: auto;
+    }
+    .ladder-svg {
+      width: 100%;
+      min-width: 0;
+    }
+    .properties label {
+      display: grid;
+      gap: 4px;
+      font-size: 12px;
+    }
+    .properties input, .properties textarea, .properties select {
+      border-radius: 6px;
+      border: 1px solid var(--vscode-input-border);
+      background: var(--vscode-input-background);
+      color: var(--vscode-input-foreground);
+      padding: 6px 8px;
+      font-size: 12px;
+    }
+    .properties textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    .properties {
+      display: grid;
+      gap: 10px;
+    }
+    .properties[data-has-selection="true"] .empty {
+      display: none;
+    }
+    .empty {
+      opacity: 0.7;
+      font-style: italic;
+      padding: 8px;
+    }
+    table.vars {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    table.vars th, table.vars td {
+      padding: 4px 6px;
+      border-bottom: 1px solid var(--vscode-editorWidget-border);
+      text-align: left;
+    }
+    table.vars th {
+      background: var(--vscode-editorWidget-background);
+      position: sticky;
+      top: 0;
+    }
+    .vars-footer {
+      display: grid;
+      grid-template-columns: 1fr 90px 80px;
+      gap: 6px;
+    }
+    .vars-footer input, .vars-footer select {
+      border-radius: 6px;
+      border: 1px solid var(--vscode-input-border);
+      background: var(--vscode-input-background);
+      color: var(--vscode-input-foreground);
+      padding: 6px 8px;
+      font-size: 12px;
+    }
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 12px;
+      font-size: 11px;
+      border-top: 1px solid var(--vscode-editorWidget-border);
+      background: var(--vscode-sideBar-background);
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <button class="icon-btn" title="Undo">↶</button>
+    <button class="icon-btn" title="Redo">↷</button>
+    <button class="icon-btn" title="New">📄</button>
+    <button class="icon-btn" title="Open">📂</button>
+    <button class="icon-btn" title="Share">🔗</button>
+    <button class="icon-btn" title="Help">?</button>
+    <div class="spacer"></div>
+    <button class="icon-btn" title="Contact NO">| |</button>
+    <button class="icon-btn" title="Contact NC">|/|</button>
+    <button class="icon-btn" title="Coil">( )</button>
+    <button class="icon-btn" title="Timer">TON</button>
+    <button class="icon-btn" title="Counter">CTU</button>
+    <button class="icon-btn" title="Math">∑</button>
+    <button class="icon-btn" title="Compare">≥</button>
+    <button class="icon-btn" title="Move">MOV</button>
+  </div>
+  <div class="subbar">
+    <button class="icon-btn" title="Delete">🗑</button>
+    <button class="icon-btn" title="Move Up">↑</button>
+    <button class="icon-btn" title="Move Down">↓</button>
+    <button class="icon-btn" title="Move Left">←</button>
+    <button class="icon-btn" title="Move Right">→</button>
+    <button class="icon-btn" title="Edit">✎</button>
+    <button class="run-btn" title="Run">▶</button>
+  </div>
+    <div class="content" id="layout-root">
+      <aside class="left-panel">
+      <div class="panel-section">
+        <h2>Variables</h2>
+        <table class="vars">
+          <thead>
+            <tr><th>Name</th><th>Type</th><th>Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>SystemOn</td><td>Bool</td><td>false</td></tr>
+            <tr><td>Cycle</td><td>Timer</td><td>0</td></tr>
+            <tr><td>X0</td><td>Bool</td><td>false</td></tr>
+          </tbody>
+        </table>
+        <div class="vars-footer">
+          <input type="text" placeholder="Add new variable" />
+          <select>
+            <option>Bool</option>
+            <option>Number</option>
+            <option>Counter</option>
+            <option>Timer</option>
+          </select>
+          <button class="btn secondary">Submit</button>
+        </div>
+      </div>
+      <div class="panel-section properties" id="properties">
+        <h2>Properties</h2>
+        <div class="empty">Select an element to edit its properties.</div>
+        <label>
+          Type
+          <div id="prop-type">None</div>
+        </label>
+        <label>
+          Tag / Address
+          <input id="prop-tag" type="text" placeholder="e.g. X0 or M10" />
+        </label>
+        <label>
+          Comment
+          <textarea id="prop-comment" placeholder="Description"></textarea>
+        </label>
+        <label>
+          <span id="prop-param-label">Parameter</span>
+          <input id="prop-param" type="text" placeholder="Preset / expression" />
+        </label>
+      </div>
+    </aside>
+      <div class="splitter" id="splitter" title="Drag to resize"></div>
+      <main class="workspace">
+      <div class="toolbar">
+        <div class="toolbar-group element-bar" id="element-bar"></div>
+        <div class="toolbar-group">
+          <button id="add-rung" class="btn">Add Rung</button>
+          <button id="add-branch" class="btn secondary">Add Branch</button>
+          <button id="delete-element" class="btn ghost">Delete Element</button>
+          <button id="move-left" class="btn ghost">Move Left</button>
+          <button id="move-right" class="btn ghost">Move Right</button>
+          <button id="clear-tool" class="btn ghost">Clear Selection</button>
+        </div>
+      </div>
+      <div id="diagram"></div>
+    </main>
+  </div>
+    <div class="footer">
+      <div>ABOUT</div>
+      <div></div>
+    </div>
+  <script nonce="__NONCE__">
+    const vscode = acquireVsCodeApi();
+    let model = { rungs: [] };
+    let selectedTool = null;
+    let selected = null;
+    let nextElementId = 1;
+
+    const TOOLBOX = [
+      { type: "contact-no", label: "Contact NO", symbol: "--| |--" },
+      { type: "contact-nc", label: "Contact NC", symbol: "--|/|--" },
+      { type: "coil", label: "Coil", symbol: "--( )--" },
+      { type: "latch", label: "Latch", symbol: "--(S)--" },
+      { type: "unlatch", label: "Unlatch", symbol: "--(R)--" },
+      { type: "timer", label: "Timer (TON)", symbol: "[TON]" },
+      { type: "counter", label: "Counter (CTU)", symbol: "[CTU]" },
+      { type: "compare", label: "Compare", symbol: "[CMP]" },
+      { type: "math", label: "Math", symbol: "[MATH]" },
+      { type: "move", label: "Move", symbol: "[MOV]" },
+    ];
+
+    function ensureRung() {
+      if (model.rungs.length === 0) {
+        model.rungs.push({ id: 1, paths: [{ id: 1, elements: [] }] });
+      }
+    }
+
+    function selectTool(type) {
+      selectedTool = type;
+      const tools = document.querySelectorAll(".element-btn");
+      tools.forEach((tool) => {
+        tool.classList.toggle("active", tool.dataset.type === type);
+      });
+    }
+
+    function selectElement(rungId, pathId, elementId) {
+      selected = { rungId, pathId, elementId };
+      render();
+      syncProperties();
+    }
+
+    function clearSelection() {
+      selected = null;
+      render();
+      syncProperties();
+    }
+
+    function getSelectedElement() {
+      if (!selected) {
+        return null;
+      }
+      const rung = model.rungs.find((r) => r.id === selected.rungId);
+      if (!rung) {
+        return null;
+      }
+      const path = rung.paths.find((p) => p.id === selected.pathId);
+      if (!path) {
+        return null;
+      }
+      return path.elements.find((el) => el.id === selected.elementId) || null;
+    }
+
+    function renderToolbox() {
+      const root = document.getElementById("element-bar");
+      root.innerHTML = "";
+      for (const tool of TOOLBOX) {
+        const button = document.createElement("button");
+        button.className = "element-btn";
+        button.dataset.type = tool.type;
+        button.title = tool.label;
+        button.textContent = tool.symbol;
+        button.addEventListener("click", () => selectTool(tool.type));
+        root.appendChild(button);
+      }
+    }
+
+    function render() {
+      const root = document.getElementById("diagram");
+      root.innerHTML = "";
+
+      if (model.rungs.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "No rungs yet. Add one to begin.";
+        root.appendChild(empty);
+        return;
+      }
+
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.classList.add("ladder-svg");
+      svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+
+      const rungHeight = 70;
+      const pathGap = 50;
+      const leftRailX = 40;
+      const startX = 90;
+      const elementWidth = 90;
+      const elementGap = 26;
+      const textOffset = 16;
+      const stroke = "var(--vscode-editor-foreground)";
+      const muted = "var(--vscode-disabledForeground)";
+
+      let currentY = 40;
+
+      let drawGroup = svg;
+
+      const updateWidth = () => {
+        const width = root.clientWidth || 980;
+        return Math.max(width, 520);
+      };
+
+      const addLine = (x1, y1, x2, y2, width = 2) => {
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", x1);
+        line.setAttribute("y1", y1);
+        line.setAttribute("x2", x2);
+        line.setAttribute("y2", y2);
+        line.setAttribute("stroke", stroke);
+        line.setAttribute("stroke-width", width);
+        drawGroup.appendChild(line);
+      };
+
+      const addText = (x, y, text, size = 12, align = "start") => {
+        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.setAttribute("x", x);
+        label.setAttribute("y", y);
+        label.setAttribute("fill", stroke);
+        label.setAttribute("font-size", size);
+        label.setAttribute("dominant-baseline", "middle");
+        label.setAttribute("text-anchor", align);
+        label.textContent = text;
+        drawGroup.appendChild(label);
+      };
+
+      const addSlot = (x, y, rungId, pathId, index) => {
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", x);
+        circle.setAttribute("cy", y);
+        circle.setAttribute("r", 8);
+        circle.setAttribute("fill", "transparent");
+        circle.setAttribute("stroke", muted);
+        circle.setAttribute("stroke-dasharray", "3 2");
+        circle.style.cursor = "pointer";
+        circle.addEventListener("click", () => {
+          if (!selectedTool) {
+            return;
+          }
+          insertElement(rungId, pathId, index, selectedTool);
+        });
+        drawGroup.appendChild(circle);
+
+        const plus = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        plus.setAttribute("x", x);
+        plus.setAttribute("y", y + 1);
+        plus.setAttribute("fill", muted);
+        plus.setAttribute("font-size", "10");
+        plus.setAttribute("text-anchor", "middle");
+        plus.setAttribute("dominant-baseline", "middle");
+        plus.textContent = "+";
+        drawGroup.appendChild(plus);
+      };
+
+      const addContact = (x, y, type) => {
+        addLine(x - 16, y, x - 4, y);
+        addLine(x + 4, y, x + 16, y);
+        addLine(x - 4, y - 10, x - 4, y + 10);
+        addLine(x + 4, y - 10, x + 4, y + 10);
+        if (type === "contact-nc") {
+          addLine(x - 6, y - 12, x + 6, y + 12);
+        }
+      };
+
+      const addCoil = (x, y) => {
+        addLine(x - 18, y, x - 8, y);
+        addLine(x + 8, y, x + 18, y);
+        const left = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        left.setAttribute("d", "M " + (x - 8) + " " + (y - 12) + " A 12 12 0 0 1 " + (x - 8) + " " + (y + 12));
+        left.setAttribute("stroke", stroke);
+        left.setAttribute("stroke-width", "2");
+        left.setAttribute("fill", "none");
+        drawGroup.appendChild(left);
+        const right = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        right.setAttribute("d", "M " + (x + 8) + " " + (y - 12) + " A 12 12 0 0 0 " + (x + 8) + " " + (y + 12));
+        right.setAttribute("stroke", stroke);
+        right.setAttribute("stroke-width", "2");
+        right.setAttribute("fill", "none");
+        drawGroup.appendChild(right);
+      };
+
+      const addBlock = (x, y, label, width = 58, height = 30) => {
+        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("x", x - width / 2);
+        rect.setAttribute("y", y - height / 2);
+        rect.setAttribute("width", width);
+        rect.setAttribute("height", height);
+        rect.setAttribute("rx", "4");
+        rect.setAttribute("ry", "4");
+        rect.setAttribute("fill", "var(--vscode-editorWidget-background)");
+        rect.setAttribute("stroke", stroke);
+        rect.setAttribute("stroke-width", "1.5");
+        drawGroup.appendChild(rect);
+        addText(x, y, label, 11, "middle");
+      };
+
+      for (const rung of model.rungs) {
+        const rungGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        rungGroup.setAttribute("data-rung", String(rung.id));
+        svg.appendChild(rungGroup);
+        drawGroup = rungGroup;
+
+        const rightRailX = updateWidth() - 40;
+        const rungTop = currentY;
+        const rungPaths = rung.paths.length;
+        const rungBlockHeight = Math.max(rungHeight, rungPaths * pathGap);
+
+        addText(10, rungTop + 12, String(rung.id), 11);
+        addLine(leftRailX, rungTop, leftRailX, rungTop + rungBlockHeight, 3);
+        addLine(rightRailX, rungTop, rightRailX, rungTop + rungBlockHeight, 3);
+
+        let pathIndex = 0;
+        for (const path of rung.paths) {
+          const y = rungTop + 20 + pathIndex * pathGap;
+          addLine(leftRailX, y, rightRailX, y, 2);
+
+          let cursorX = startX;
+          for (let i = 0; i <= path.elements.length; i += 1) {
+            addSlot(cursorX - elementGap / 2, y, rung.id, path.id, i);
+            if (i < path.elements.length) {
+              const el = path.elements[i];
+              const elementX = cursorX + elementWidth / 2;
+              const isSelected =
+                selected &&
+                selected.rungId === rung.id &&
+                selected.pathId === path.id &&
+                selected.elementId === el.id;
+              if (el.type === "contact-no" || el.type === "contact-nc") {
+                addContact(elementX, y, el.type);
+              } else if (el.type === "coil" || el.type === "latch" || el.type === "unlatch") {
+                addCoil(elementX, y);
+                if (el.type === "latch") {
+                  addText(elementX, y, "S", 10, "middle");
+                } else if (el.type === "unlatch") {
+                  addText(elementX, y, "R", 10, "middle");
+                }
+              } else if (el.type === "timer") {
+                addBlock(elementX, y, "TON");
+              } else if (el.type === "counter") {
+                addBlock(elementX, y, "CTU");
+              } else if (el.type === "compare") {
+                addBlock(elementX, y, "CMP");
+              } else if (el.type === "math") {
+                addBlock(elementX, y, "MATH");
+              } else if (el.type === "move") {
+                addBlock(elementX, y, "MOV");
+              } else {
+                addBlock(elementX, y, "BLOCK");
+              }
+
+              const tagText = el.tag || "";
+              if (tagText) {
+                addText(elementX, y - textOffset, tagText, 11, "middle");
+              }
+
+              const clickZone = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+              clickZone.setAttribute("x", elementX - elementWidth / 2);
+              clickZone.setAttribute("y", y - 20);
+              clickZone.setAttribute("width", elementWidth);
+              clickZone.setAttribute("height", 40);
+              clickZone.setAttribute("fill", "transparent");
+              clickZone.style.cursor = "pointer";
+              clickZone.addEventListener("click", (event) => {
+                event.stopPropagation();
+                selectElement(rung.id, path.id, el.id);
+              });
+              drawGroup.appendChild(clickZone);
+
+              if (isSelected) {
+                const outline = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                outline.setAttribute("x", elementX - elementWidth / 2);
+                outline.setAttribute("y", y - 22);
+                outline.setAttribute("width", elementWidth);
+                outline.setAttribute("height", 44);
+                outline.setAttribute("fill", "none");
+                outline.setAttribute("stroke", "var(--ladder-highlight)");
+                outline.setAttribute("stroke-width", "2");
+                drawGroup.appendChild(outline);
+              }
+
+              cursorX += elementWidth + elementGap;
+            }
+          }
+          pathIndex += 1;
+        }
+
+        currentY += rungBlockHeight + 30;
+        drawGroup = svg;
+      }
+
+      svg.setAttribute("height", String(currentY));
+      svg.setAttribute("width", String(updateWidth()));
+      svg.addEventListener("click", () => {
+        clearSelection();
+      });
+      root.appendChild(svg);
+    }
+
+    function formatElementLabel(element) {
+      switch (element.type) {
+        case "contact-no":
+          return "Contact NO";
+        case "contact-nc":
+          return "Contact NC";
+        case "coil":
+          return "Coil";
+        case "latch":
+          return "Latch";
+        case "unlatch":
+          return "Unlatch";
+        case "timer":
+          return "Timer (TON)";
+        case "counter":
+          return "Counter (CTU)";
+        case "compare":
+          return "Compare";
+        case "math":
+          return "Math";
+        case "move":
+          return "Move";
+        default:
+          return element.type;
+      }
+    }
+
+    function addRung() {
+      const id = model.rungs.length
+        ? model.rungs[model.rungs.length - 1].id + 1
+        : 1;
+      model.rungs.push({ id, paths: [{ id: 1, elements: [] }] });
+      sendUpdate();
+    }
+
+    function addBranch(rungId) {
+      const rung = model.rungs.find((r) => r.id === rungId);
+      if (!rung) {
+        return;
+      }
+      const nextId = rung.paths.length
+        ? rung.paths[rung.paths.length - 1].id + 1
+        : 1;
+      rung.paths.push({ id: nextId, elements: [] });
+      sendUpdate();
+    }
+
+    function deleteRung(rungId) {
+      const index = model.rungs.findIndex((r) => r.id === rungId);
+      if (index === -1) {
+        return;
+      }
+      model.rungs.splice(index, 1);
+      clearSelection();
+      sendUpdate();
+    }
+
+    function insertElement(rungId, pathId, index, type) {
+      const rung = model.rungs.find((r) => r.id === rungId);
+      if (!rung) {
+        return;
+      }
+      const path = rung.paths.find((p) => p.id === pathId);
+      if (!path) {
+        return;
+      }
+      const element = {
+        id: "e" + nextElementId,
+        type,
+        tag: "",
+        comment: "",
+        param: "",
+      };
+      nextElementId += 1;
+      path.elements.splice(index, 0, element);
+      selectElement(rungId, pathId, element.id);
+      sendUpdate();
+    }
+
+    function deleteSelectedElement() {
+      const target = getSelectedElement();
+      if (!target) {
+        return;
+      }
+      const rung = model.rungs.find((r) => r.id === selected.rungId);
+      const path = rung.paths.find((p) => p.id === selected.pathId);
+      const index = path.elements.findIndex((el) => el.id === target.id);
+      if (index >= 0) {
+        path.elements.splice(index, 1);
+      }
+      clearSelection();
+      sendUpdate();
+    }
+
+    function moveSelected(delta) {
+      const target = getSelectedElement();
+      if (!target) {
+        return;
+      }
+      const rung = model.rungs.find((r) => r.id === selected.rungId);
+      const path = rung.paths.find((p) => p.id === selected.pathId);
+      const index = path.elements.findIndex((el) => el.id === target.id);
+      const nextIndex = index + delta;
+      if (nextIndex < 0 || nextIndex >= path.elements.length) {
+        return;
+      }
+      const [element] = path.elements.splice(index, 1);
+      path.elements.splice(nextIndex, 0, element);
+      selectElement(rung.id, path.id, element.id);
+      sendUpdate();
+    }
+
+    function sendUpdate() {
+      render();
+      vscode.postMessage({ type: "update", xml: modelToXml() });
+    }
+
+    function escapeXml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&apos;");
+    }
+
+    function modelToXml() {
+      let xml = "<ladder version=\"1.0\">\n";
+      for (const rung of model.rungs) {
+        xml += "  <rung id=\"" + rung.id + "\">\n";
+        for (const path of rung.paths) {
+          xml += "    <path id=\"" + path.id + "\">\n";
+          for (const element of path.elements) {
+            xml +=
+              "      <element id=\"" +
+              escapeXml(element.id) +
+              "\" type=\"" +
+              escapeXml(element.type) +
+              "\" tag=\"" +
+              escapeXml(element.tag || "") +
+              "\" comment=\"" +
+              escapeXml(element.comment || "") +
+              "\" param=\"" +
+              escapeXml(element.param || "") +
+              "\" />\n";
+          }
+          xml += "    </path>\n";
+        }
+        xml += "  </rung>\n";
+      }
+      xml += "</ladder>\n";
+      return xml;
+    }
+
+    function loadFromXml(xml) {
+      model = { rungs: [] };
+      try {
+        const doc = new DOMParser().parseFromString(xml, "application/xml");
+        const rungNodes = Array.from(doc.querySelectorAll("ladder > rung"));
+        for (const rung of rungNodes) {
+          const id = Number.parseInt(rung.getAttribute("id") || "0", 10);
+          const paths = [];
+          const pathNodes = Array.from(rung.querySelectorAll(":scope > path"));
+          for (const pathNode of pathNodes) {
+            const pathId = Number.parseInt(pathNode.getAttribute("id") || "0", 10);
+            const elements = [];
+            const elementNodes = Array.from(pathNode.querySelectorAll(":scope > element"));
+            for (const elementNode of elementNodes) {
+              const type = elementNode.getAttribute("type") || "contact-no";
+              const elementId = elementNode.getAttribute("id") || "e" + nextElementId;
+              elements.push({
+                id: elementId,
+                type,
+                tag: elementNode.getAttribute("tag") || "",
+                comment: elementNode.getAttribute("comment") || "",
+                param: elementNode.getAttribute("param") || "",
+              });
+              const numeric = Number.parseInt(elementId.replace(/\D/g, ""), 10);
+              if (numeric >= nextElementId) {
+                nextElementId = numeric + 1;
+              }
+            }
+            paths.push({
+              id: pathId || paths.length + 1,
+              elements,
+            });
+          }
+          model.rungs.push({
+            id: id || model.rungs.length + 1,
+            paths: paths.length ? paths : [{ id: 1, elements: [] }],
+          });
+        }
+      } catch (error) {
+        model = { rungs: [] };
+      }
+      render();
+      syncProperties();
+    }
+
+    function syncProperties() {
+      const panel = document.getElementById("properties");
+      const element = getSelectedElement();
+      const typeField = document.getElementById("prop-type");
+      const tagField = document.getElementById("prop-tag");
+      const commentField = document.getElementById("prop-comment");
+      const paramField = document.getElementById("prop-param");
+      const paramLabel = document.getElementById("prop-param-label");
+
+      if (!element) {
+        typeField.textContent = "None";
+        tagField.value = "";
+        commentField.value = "";
+        paramField.value = "";
+        tagField.disabled = true;
+        commentField.disabled = true;
+        paramField.disabled = true;
+        panel.dataset.hasSelection = "false";
+        return;
+      }
+
+      panel.dataset.hasSelection = "true";
+      typeField.textContent = formatElementLabel(element);
+      tagField.value = element.tag || "";
+      commentField.value = element.comment || "";
+      paramField.value = element.param || "";
+      tagField.disabled = false;
+      commentField.disabled = false;
+      paramField.disabled = false;
+
+      if (element.type === "timer" || element.type === "counter") {
+        paramLabel.textContent = "Preset";
+      } else if (element.type === "compare") {
+        paramLabel.textContent = "Compare";
+      } else if (element.type === "math") {
+        paramLabel.textContent = "Expression";
+      } else if (element.type === "move") {
+        paramLabel.textContent = "Move";
+      } else {
+        paramLabel.textContent = "Parameter";
+      }
+    }
+
+    document.getElementById("add-rung").addEventListener("click", () => addRung());
+    document.getElementById("add-branch").addEventListener("click", () => {
+      const target = selected ? selected.rungId : model.rungs[model.rungs.length - 1]?.id;
+      if (target) {
+        addBranch(target);
+      }
+    });
+    document.getElementById("delete-element").addEventListener("click", () => deleteSelectedElement());
+    document.getElementById("move-left").addEventListener("click", () => moveSelected(-1));
+    document.getElementById("move-right").addEventListener("click", () => moveSelected(1));
+    document.getElementById("clear-tool").addEventListener("click", () => {
+      selectTool(null);
+      clearSelection();
+    });
+
+    document.getElementById("prop-tag").addEventListener("input", (event) => {
+      const element = getSelectedElement();
+      if (!element) {
+        return;
+      }
+      element.tag = event.target.value;
+      sendUpdate();
+    });
+    document.getElementById("prop-comment").addEventListener("input", (event) => {
+      const element = getSelectedElement();
+      if (!element) {
+        return;
+      }
+      element.comment = event.target.value;
+      sendUpdate();
+    });
+    document.getElementById("prop-param").addEventListener("input", (event) => {
+      const element = getSelectedElement();
+      if (!element) {
+        return;
+      }
+      element.param = event.target.value;
+      sendUpdate();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Delete" || event.key === "Backspace") {
+        deleteSelectedElement();
+      }
+      if (event.key === "Escape") {
+        clearSelection();
+      }
+    });
+
+    function initialize() {
+      renderToolbox();
+      ensureRung();
+      render();
+      syncProperties();
+      setupSplitter();
+      if (window.ResizeObserver) {
+        const observer = new ResizeObserver(() => {
+          render();
+        });
+        observer.observe(document.getElementById("diagram"));
+      } else {
+        window.addEventListener("resize", () => render());
+      }
+    }
+
+    function setupSplitter() {
+      const splitter = document.getElementById("splitter");
+      const layoutRoot = document.getElementById("layout-root");
+      if (!splitter || !layoutRoot) {
+        return;
+      }
+
+      let dragging = false;
+
+      const onMouseMove = (event) => {
+        if (!dragging) {
+          return;
+        }
+        const rect = layoutRoot.getBoundingClientRect();
+        const min = 180;
+        const max = Math.max(min, rect.width - 280);
+        const next = Math.min(Math.max(event.clientX - rect.left, min), max);
+        layoutRoot.style.setProperty("--left-panel-width", next + "px");
+      };
+
+      const onMouseUp = () => {
+        dragging = false;
+        document.body.style.cursor = "";
+      };
+
+      splitter.addEventListener("mousedown", (event) => {
+        event.preventDefault();
+        dragging = true;
+        document.body.style.cursor = "col-resize";
+      });
+
+      window.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("mouseup", onMouseUp);
+    }
+
+    window.addEventListener("message", (event) => {
+      const message = event.data;
+      if (!message || typeof message !== "object") {
+        return;
+      }
+      if (message.type === "update") {
+        loadFromXml(message.xml || "");
+      }
+    });
+
+    initialize();
+    vscode.postMessage({ type: "ready" });
+  </script>
+</body>
+</html>
