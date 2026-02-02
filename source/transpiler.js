@@ -196,17 +196,17 @@ function transpileSimpleStatement(trimmed) {
 
 function transpileDim(dimLine) {
   if (!dimLine) {
-    return "# DIM";
+    return "# Dim";
   }
 
   if (hasTopLevelComma(dimLine)) {
-    return `# DIM ${dimLine}  # MULTI-DECLARATIONS NOT SUPPORTED`;
+    return `# Dim ${dimLine}  # Multi-declarations not supported`;
   }
 
   let cursor = 0;
   const name = parseIdentifier(dimLine, cursor);
   if (!name) {
-    return `# DIM ${dimLine}`;
+    return `# Dim ${dimLine}`;
   }
 
   cursor = name.end;
@@ -216,7 +216,7 @@ function transpileDim(dimLine) {
   if (dimLine[cursor] === "(") {
     const closeParen = findMatchingParen(dimLine, cursor);
     if (closeParen === -1) {
-      return `# DIM ${dimLine}  # MISSING )`;
+      return `# Dim ${dimLine}  # Missing )`;
     }
     arrayDims = dimLine.slice(cursor + 1, closeParen);
     cursor = closeParen + 1;
@@ -225,14 +225,14 @@ function transpileDim(dimLine) {
   cursor = skipWhitespace(dimLine, cursor);
   const asMatch = /^AS\b/i.exec(dimLine.slice(cursor));
   if (!asMatch) {
-    return `# DIM ${dimLine}  # MISSING AS`;
+    return `# Dim ${dimLine}  # Missing As`;
   }
 
   cursor += asMatch[0].length;
   cursor = skipWhitespace(dimLine, cursor);
   const typeToken = parseIdentifier(dimLine, cursor);
   if (!typeToken) {
-    return `# DIM ${dimLine}  # MISSING TYPE`;
+    return `# Dim ${dimLine}  # Missing Type`;
   }
 
   const typeName = typeToken.name.toUpperCase();
@@ -245,7 +245,7 @@ function transpileDim(dimLine) {
     cursor = skipWhitespace(dimLine, cursor + 1);
     const lenToken = parseIdentifier(dimLine, cursor);
     if (lenToken) {
-      lengthComment = `  # STRING LENGTH ${dimLine.slice(
+      lengthComment = `  # String length ${dimLine.slice(
         lenToken.start,
         lenToken.end
       )}`;
@@ -262,7 +262,7 @@ function transpileDim(dimLine) {
     .filter(Boolean);
 
   if (dims.length === 0) {
-    return `# DIM ${dimLine}  # EMPTY DIMENSIONS`;
+    return `# Dim ${dimLine}  # Empty dimensions`;
   }
 
   const dimExprs = dims.map((dim) => adjustDimension(dim));
@@ -588,3 +588,4 @@ function findMatchingParen(text, openIndex) {
 module.exports = {
   transpileBasToPython,
 };
+

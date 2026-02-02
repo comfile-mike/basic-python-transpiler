@@ -10,15 +10,15 @@ const {
 const connection = createConnection(ProposedFeatures.all);
 const documents = new Map();
 const BLOCK_ENDINGS = {
-  IF: "ENDIF",
-  FOR: "NEXT",
-  DO: "LOOP",
-  WHILE: "WEND",
-  SUB: "END SUB",
-  FUNCTION: "END FUNCTION",
-  SELECT: "END SELECT",
-  TYPE: "END TYPE",
-  WITH: "END WITH",
+  IF: "End If",
+  FOR: "Next",
+  DO: "Loop",
+  WHILE: "Wend",
+  SUB: "End Sub",
+  FUNCTION: "End Function",
+  SELECT: "End Select",
+  TYPE: "End Type",
+  WITH: "End With",
 };
 
 connection.onInitialize(() => {
@@ -36,27 +36,27 @@ connection.onInitialize(() => {
 
 connection.onCompletion(() => {
   return [
-    { label: "PRINT", kind: 14, detail: "Print to output" },
-    { label: "INPUT", kind: 14, detail: "Set port to input mode" },
-    { label: "DEBUG", kind: 14, detail: "Debug output" },
-    { label: "DELAY", kind: 14, detail: "Pause in milliseconds" },
-    { label: "OUTPUT", kind: 14, detail: "Set port to output mode" },
-    { label: "IF", kind: 14, detail: "Start conditional" },
-    { label: "THEN", kind: 14, detail: "Conditional branch" },
-    { label: "ELSE", kind: 14, detail: "Conditional branch" },
-    { label: "ENDIF", kind: 14, detail: "End conditional" },
-    { label: "FOR", kind: 14, detail: "Start loop" },
-    { label: "TO", kind: 14, detail: "Loop boundary" },
-    { label: "STEP", kind: 14, detail: "Loop step" },
-    { label: "DO", kind: 14, detail: "Start loop" },
-    { label: "LOOP", kind: 14, detail: "End loop" },
-    { label: "WHILE", kind: 14, detail: "Loop condition" },
-    { label: "NEXT", kind: 14, detail: "End loop" },
-    { label: "GOTO", kind: 14, detail: "Jump to label" },
-    { label: "GOSUB", kind: 14, detail: "Call subroutine" },
-    { label: "RETURN", kind: 14, detail: "Return from subroutine" },
-    { label: "DIM", kind: 14, detail: "Declare array" },
-    { label: "END", kind: 14, detail: "End program" },
+    { label: "Print", kind: 14, detail: "Print to output" },
+    { label: "Input", kind: 14, detail: "Set port to input mode" },
+    { label: "Debug", kind: 14, detail: "Debug output" },
+    { label: "Delay", kind: 14, detail: "Pause in milliseconds" },
+    { label: "Output", kind: 14, detail: "Set port to output mode" },
+    { label: "If", kind: 14, detail: "Start conditional" },
+    { label: "Then", kind: 14, detail: "Conditional branch" },
+    { label: "Else", kind: 14, detail: "Conditional branch" },
+    { label: "End If", kind: 14, detail: "End conditional" },
+    { label: "For", kind: 14, detail: "Start loop" },
+    { label: "To", kind: 14, detail: "Loop boundary" },
+    { label: "Step", kind: 14, detail: "Loop step" },
+    { label: "Do", kind: 14, detail: "Start loop" },
+    { label: "Loop", kind: 14, detail: "End loop" },
+    { label: "While", kind: 14, detail: "Loop condition" },
+    { label: "Next", kind: 14, detail: "End loop" },
+    { label: "GoTo", kind: 14, detail: "Jump to label" },
+    { label: "GoSub", kind: 14, detail: "Call subroutine" },
+    { label: "Return", kind: 14, detail: "Return from subroutine" },
+    { label: "Dim", kind: 14, detail: "Declare array" },
+    { label: "End", kind: 14, detail: "End program" },
   ];
 });
 
@@ -145,7 +145,7 @@ function validateText(uri, text) {
     diagnostics.push({
       severity: DiagnosticSeverity.Error,
       range: makeRange(open.line, open.character, open.character + open.length),
-      message: `Missing ${BLOCK_ENDINGS[open.type] || "END"} for ${open.type}.`,
+      message: `Missing ${BLOCK_ENDINGS[open.type] || "End"} for ${formatKeyword(open.type)}.`,
       source: "cubloc-basic",
     });
   }
@@ -225,6 +225,58 @@ function getWordAt(line, character) {
   return word.toUpperCase();
 }
 
+const KEYWORD_TITLE = {
+  IF: "If",
+  THEN: "Then",
+  ELSE: "Else",
+  ELSEIF: "ElseIf",
+  ENDIF: "End If",
+  FOR: "For",
+  TO: "To",
+  STEP: "Step",
+  NEXT: "Next",
+  DO: "Do",
+  LOOP: "Loop",
+  WHILE: "While",
+  WEND: "Wend",
+  UNTIL: "Until",
+  SUB: "Sub",
+  FUNCTION: "Function",
+  TYPE: "Type",
+  WITH: "With",
+  SELECT: "Select",
+  END: "End",
+  GOTO: "GoTo",
+  GOSUB: "GoSub",
+  RETURN: "Return",
+  DIM: "Dim",
+  INPUT: "Input",
+  OUTPUT: "Output",
+  OUT: "Out",
+  DEBUG: "Debug",
+  DELAY: "Delay",
+  PRINT: "Print",
+  LET: "Let",
+  IN: "In",
+  CONST: "Const",
+  OPTION: "Option",
+  DECLARE: "Declare",
+  PUBLIC: "Public",
+  PRIVATE: "Private",
+  SHARED: "Shared",
+  STATIC: "Static",
+  GLOBAL: "Global",
+  LOCAL: "Local",
+  BYVAL: "ByVal",
+  BYREF: "ByRef",
+  ALIAS: "Alias",
+  LIB: "Lib",
+};
+
+function formatKeyword(word) {
+  return KEYWORD_TITLE[word] || word;
+}
+
 function validateSyntaxLine(tokens, lineNumber, line, diagnostics, stack) {
   const first = tokens[0]?.text;
   const second = tokens[1]?.text;
@@ -236,7 +288,7 @@ function validateSyntaxLine(tokens, lineNumber, line, diagnostics, stack) {
       diagnostics.push({
         severity: DiagnosticSeverity.Error,
         range: makeRange(lineNumber, tokens[0].index, tokens[0].index + tokens[0].length),
-        message: "IF without THEN.",
+        message: "If without Then.",
         source: "cubloc-basic",
       });
     } else if (thenIndex === tokens.length - 1) {
@@ -250,7 +302,7 @@ function validateSyntaxLine(tokens, lineNumber, line, diagnostics, stack) {
       diagnostics.push({
         severity: DiagnosticSeverity.Error,
         range: makeRange(lineNumber, tokens[0].index, tokens[0].index + tokens[0].length),
-        message: "ELSEIF without matching IF.",
+        message: "ElseIf without matching If.",
         source: "cubloc-basic",
       });
     }
@@ -262,7 +314,7 @@ function validateSyntaxLine(tokens, lineNumber, line, diagnostics, stack) {
       diagnostics.push({
         severity: DiagnosticSeverity.Error,
         range: makeRange(lineNumber, tokens[0].index, tokens[0].index + tokens[0].length),
-        message: "ELSE without matching IF.",
+        message: "Else without matching If.",
         source: "cubloc-basic",
       });
     }
@@ -399,7 +451,7 @@ function validateOutStatement(keywordToken, cleanLine, lineNumber, diagnostics) 
         keywordToken.index,
         keywordToken.index + keywordToken.length
       ),
-      message: "OUT REQUIRES PORT, VALUE.",
+      message: "Out requires port, value.",
       source: "cubloc-basic",
     });
     return;
@@ -414,7 +466,7 @@ function validateOutStatement(keywordToken, cleanLine, lineNumber, diagnostics) 
         keywordToken.index,
         keywordToken.index + keywordToken.length
       ),
-      message: "OUT REQUIRES PORT, VALUE (MISSING COMMA).",
+      message: "Out requires port, value (missing comma).",
       source: "cubloc-basic",
     });
     return;
@@ -431,7 +483,7 @@ function validateOutStatement(keywordToken, cleanLine, lineNumber, diagnostics) 
         keywordToken.index,
         keywordToken.index + keywordToken.length
       ),
-      message: "OUT REQUIRES PORT, VALUE.",
+      message: "Out requires port, value.",
       source: "cubloc-basic",
     });
     return;
@@ -446,7 +498,7 @@ function validateOutStatement(keywordToken, cleanLine, lineNumber, diagnostics) 
         keywordToken.index,
         keywordToken.index + keywordToken.length
       ),
-      message: "OUT PORT MUST BE 0 TO 255.",
+      message: "Out port must be 0 to 255.",
       source: "cubloc-basic",
     });
   }
@@ -460,7 +512,7 @@ function validateOutStatement(keywordToken, cleanLine, lineNumber, diagnostics) 
         keywordToken.index,
         keywordToken.index + keywordToken.length
       ),
-      message: "OUT VALUE MUST BE 0 OR 1.",
+      message: "Out value must be 0 or 1.",
       source: "cubloc-basic",
     });
   }
@@ -478,7 +530,7 @@ function validateDebugStatement(keywordToken, cleanLine, lineNumber, diagnostics
         keywordToken.index,
         keywordToken.index + keywordToken.length
       ),
-      message: "DEBUG REQUIRES DATA.",
+      message: "Debug requires data.",
       source: "cubloc-basic",
     });
   }
@@ -496,7 +548,7 @@ function validateInputStatement(keywordToken, cleanLine, lineNumber, diagnostics
         keywordToken.index,
         keywordToken.index + keywordToken.length
       ),
-      message: "INPUT REQUIRES PORT VALUE.",
+      message: "Input requires port value.",
       source: "cubloc-basic",
     });
     return;
@@ -511,7 +563,7 @@ function validateInputStatement(keywordToken, cleanLine, lineNumber, diagnostics
         keywordToken.index,
         keywordToken.index + keywordToken.length
       ),
-      message: "INPUT PORT MUST BE 0 TO 255.",
+      message: "Input port must be 0 to 255.",
       source: "cubloc-basic",
     });
   }
@@ -529,7 +581,7 @@ function validateOutputStatement(keywordToken, cleanLine, lineNumber, diagnostic
         keywordToken.index,
         keywordToken.index + keywordToken.length
       ),
-      message: "OUTPUT REQUIRES PORT VALUE.",
+      message: "Output requires port value.",
       source: "cubloc-basic",
     });
     return;
@@ -544,7 +596,7 @@ function validateOutputStatement(keywordToken, cleanLine, lineNumber, diagnostic
         keywordToken.index,
         keywordToken.index + keywordToken.length
       ),
-      message: "OUTPUT PORT MUST BE 0 TO 255.",
+      message: "Output port must be 0 to 255.",
       source: "cubloc-basic",
     });
   }
@@ -562,7 +614,7 @@ function validateDelayStatement(keywordToken, cleanLine, lineNumber, diagnostics
         keywordToken.index,
         keywordToken.index + keywordToken.length
       ),
-      message: "DELAY REQUIRES MILLISECONDS VALUE.",
+      message: "Delay requires milliseconds value.",
       source: "cubloc-basic",
     });
     return;
@@ -577,7 +629,7 @@ function validateDelayStatement(keywordToken, cleanLine, lineNumber, diagnostics
         keywordToken.index,
         keywordToken.index + keywordToken.length
       ),
-      message: "DELAY VALUE MUST BE NON-NEGATIVE.",
+      message: "Delay value must be non-negative.",
       source: "cubloc-basic",
     });
   }
@@ -606,9 +658,9 @@ function validateInFunctionUsage(tokens, line, lineNumber, diagnostics) {
       diagnostics.push({
         severity: DiagnosticSeverity.Error,
         range: makeRange(lineNumber, token.index, token.index + token.length),
-        message: "IN REQUIRES A CLOSING PARENTHESIS.",
-        source: "cubloc-basic",
-      });
+      message: "In requires a closing parenthesis.",
+      source: "cubloc-basic",
+    });
       continue;
     }
 
@@ -617,9 +669,9 @@ function validateInFunctionUsage(tokens, line, lineNumber, diagnostics) {
       diagnostics.push({
         severity: DiagnosticSeverity.Error,
         range: makeRange(lineNumber, token.index, token.index + token.length),
-        message: "IN REQUIRES A PORT VALUE.",
-        source: "cubloc-basic",
-      });
+      message: "In requires a port value.",
+      source: "cubloc-basic",
+    });
       continue;
     }
 
@@ -628,9 +680,9 @@ function validateInFunctionUsage(tokens, line, lineNumber, diagnostics) {
       diagnostics.push({
         severity: DiagnosticSeverity.Error,
         range: makeRange(lineNumber, token.index, token.index + token.length),
-        message: "IN PORT MUST BE 0 TO 255.",
-        source: "cubloc-basic",
-      });
+      message: "In port must be 0 to 255.",
+      source: "cubloc-basic",
+    });
     }
   }
 }
@@ -646,7 +698,7 @@ function validateDimStatement(keywordToken, line, lineNumber, diagnostics) {
         keywordToken.index,
         keywordToken.index + keywordToken.length
       ),
-      message: "DIM DOES NOT ALLOW MULTIPLE DECLARATIONS.",
+      message: "Dim does not allow multiple declarations.",
       source: "cubloc-basic",
     });
     return;
@@ -662,7 +714,7 @@ function validateDimStatement(keywordToken, line, lineNumber, diagnostics) {
         keywordToken.index,
         keywordToken.index + keywordToken.length
       ),
-      message: "DIM REQUIRES VARIABLE NAME.",
+      message: "Dim requires variable name.",
       source: "cubloc-basic",
     });
     return;
@@ -673,7 +725,7 @@ function validateDimStatement(keywordToken, line, lineNumber, diagnostics) {
     diagnostics.push({
       severity: DiagnosticSeverity.Error,
       range: makeRange(lineNumber, cursor, cursor + 1),
-      message: "DIM REQUIRES VARIABLE NAME.",
+      message: "Dim requires variable name.",
       source: "cubloc-basic",
     });
     return;
@@ -688,9 +740,9 @@ function validateDimStatement(keywordToken, line, lineNumber, diagnostics) {
       diagnostics.push({
         severity: DiagnosticSeverity.Error,
         range: makeRange(lineNumber, cursor, cursor + 1),
-        message: "DIM ARRAY REQUIRES CLOSING PARENTHESIS.",
-        source: "cubloc-basic",
-      });
+      message: "Dim array requires closing parenthesis.",
+      source: "cubloc-basic",
+    });
       return;
     }
     cursor = closeParen + 1;
@@ -706,7 +758,7 @@ function validateDimStatement(keywordToken, line, lineNumber, diagnostics) {
         keywordToken.index,
         keywordToken.index + keywordToken.length
       ),
-      message: "DIM REQUIRES AS <TYPE>.",
+      message: "Dim requires As <Type>.",
       source: "cubloc-basic",
     });
     return;
@@ -720,7 +772,7 @@ function validateDimStatement(keywordToken, line, lineNumber, diagnostics) {
     diagnostics.push({
       severity: DiagnosticSeverity.Error,
       range: makeRange(lineNumber, cursor, cursor + 1),
-      message: "DIM AS REQUIRES TYPE.",
+      message: "Dim As requires Type.",
       source: "cubloc-basic",
     });
     return;
@@ -736,7 +788,7 @@ function validateDimStatement(keywordToken, line, lineNumber, diagnostics) {
         typeIdentifier.start,
         typeIdentifier.end
       ),
-      message: "INVALID DIM TYPE.",
+      message: "Invalid Dim Type.",
       source: "cubloc-basic",
     });
     return;
@@ -750,7 +802,7 @@ function validateDimStatement(keywordToken, line, lineNumber, diagnostics) {
       diagnostics.push({
         severity: DiagnosticSeverity.Error,
         range: makeRange(lineNumber, cursor, cursor + 1),
-        message: "ONLY STRING MAY USE * LENGTH.",
+        message: "Only String may use * length.",
         source: "cubloc-basic",
       });
       return;
@@ -762,7 +814,7 @@ function validateDimStatement(keywordToken, line, lineNumber, diagnostics) {
       diagnostics.push({
         severity: DiagnosticSeverity.Error,
         range: makeRange(lineNumber, cursor, cursor + 1),
-        message: "STRING LENGTH REQUIRED AFTER *.",
+        message: "String length required after *.",
         source: "cubloc-basic",
       });
       return;
@@ -779,7 +831,7 @@ function validateDimStatement(keywordToken, line, lineNumber, diagnostics) {
           lengthIdentifier.start,
           lengthIdentifier.end
         ),
-        message: "STRING LENGTH MUST BE A NUMBER.",
+        message: "String length must be a number.",
         source: "cubloc-basic",
       });
     }
@@ -988,7 +1040,7 @@ function parseLoopCondition(tokens, startIndex, endIndex, lineNumber, diagnostic
     diagnostics.push({
       severity: DiagnosticSeverity.Error,
       range: makeRange(lineNumber, misplaced.index, misplaced.index + misplaced.length),
-      message: `${context} WHILE/UNTIL must immediately follow ${context}.`,
+      message: `${formatKeyword(context)} While/Until must immediately follow ${formatKeyword(context)}.`,
       source: "cubloc-basic",
     });
     return { kind: "MISPLACED", missingExpression: true };
@@ -1005,7 +1057,7 @@ function parseLoopCondition(tokens, startIndex, endIndex, lineNumber, diagnostic
           untilToken.index + untilToken.length
         )
       ),
-      message: `${context} cannot use both WHILE and UNTIL.`,
+      message: `${formatKeyword(context)} cannot use both While and Until.`,
       source: "cubloc-basic",
     });
     return { kind: "BOTH", missingExpression: true };
@@ -1020,7 +1072,7 @@ function parseLoopCondition(tokens, startIndex, endIndex, lineNumber, diagnostic
     diagnostics.push({
       severity: DiagnosticSeverity.Error,
       range: makeRange(lineNumber, token.index, token.index + token.length),
-      message: `${context} ${token.text} requires a condition.`,
+      message: `${formatKeyword(context)} ${formatKeyword(token.text)} requires a condition.`,
       source: "cubloc-basic",
     });
     return { kind: token.text, missingExpression: true };
@@ -1034,7 +1086,7 @@ function popDoBlock(stack, token, lineNumber, diagnostics, condition) {
     diagnostics.push({
       severity: DiagnosticSeverity.Error,
       range: makeRange(lineNumber, token.index, token.index + token.length),
-      message: "LOOP without matching DO.",
+      message: "Loop without matching Do.",
       source: "cubloc-basic",
     });
     return;
@@ -1045,7 +1097,7 @@ function popDoBlock(stack, token, lineNumber, diagnostics, condition) {
     diagnostics.push({
       severity: DiagnosticSeverity.Error,
       range: makeRange(lineNumber, token.index, token.index + token.length),
-      message: "LOOP without matching DO.",
+      message: "Loop without matching Do.",
       source: "cubloc-basic",
     });
     return;
@@ -1056,7 +1108,7 @@ function popDoBlock(stack, token, lineNumber, diagnostics, condition) {
     diagnostics.push({
       severity: DiagnosticSeverity.Error,
       range: makeRange(missing.line, missing.character, missing.character + missing.length),
-      message: `Missing ${BLOCK_ENDINGS[missing.type] || "END"} before LOOP.`,
+      message: `Missing ${BLOCK_ENDINGS[missing.type] || "End"} before Loop.`,
       source: "cubloc-basic",
     });
   }
@@ -1069,7 +1121,7 @@ function popDoBlock(stack, token, lineNumber, diagnostics, condition) {
     diagnostics.push({
       severity: DiagnosticSeverity.Error,
       range: makeRange(lineNumber, token.index, token.index + token.length),
-      message: "LOOP cannot include a condition when DO already has WHILE/UNTIL.",
+      message: "Loop cannot include a condition when Do already has While/Until.",
       source: "cubloc-basic",
     });
   }
@@ -1091,7 +1143,7 @@ function popBlock(stack, type, token, lineNumber, diagnostics) {
     diagnostics.push({
       severity: DiagnosticSeverity.Error,
       range: makeRange(lineNumber, token.index, token.index + token.length),
-      message: `${token.text} without matching ${type}.`,
+      message: `${formatKeyword(token.text)} without matching ${formatKeyword(type)}.`,
       source: "cubloc-basic",
     });
     return;
@@ -1107,7 +1159,7 @@ function popBlock(stack, type, token, lineNumber, diagnostics) {
     diagnostics.push({
       severity: DiagnosticSeverity.Error,
       range: makeRange(lineNumber, token.index, token.index + token.length),
-      message: `${token.text} without matching ${type}.`,
+      message: `${formatKeyword(token.text)} without matching ${formatKeyword(type)}.`,
       source: "cubloc-basic",
     });
     return;
@@ -1118,7 +1170,7 @@ function popBlock(stack, type, token, lineNumber, diagnostics) {
     diagnostics.push({
       severity: DiagnosticSeverity.Error,
       range: makeRange(missing.line, missing.character, missing.character + missing.length),
-      message: `Missing ${BLOCK_ENDINGS[missing.type] || "END"} before ${token.text}.`,
+      message: `Missing ${BLOCK_ENDINGS[missing.type] || "End"} before ${formatKeyword(token.text)}.`,
       source: "cubloc-basic",
     });
   }
@@ -1148,19 +1200,20 @@ function makeRange(line, start, end) {
 }
 
 const HOVER_DOCS = {
-  DEBUG: "**DEBUG** data\n\nSends data to the debug terminal. Use `DEC`/`HEX` for formatted numbers and `CR`/`LF` for line control.",
-  DELAY: "**DELAY** n\n\nPause for *n* milliseconds.",
-  DIM: "**DIM** name [ (dims) ] **AS** type [ * length ]\n\nDeclare a variable or array. Types: BYTE, INTEGER, LONG, SINGLE, STRING.",
-  DO: "**DO** [WHILE|UNTIL cond] … **LOOP** [WHILE|UNTIL cond]\n\nCreates a loop; condition may appear on DO or LOOP (not both).",
-  LOOP: "**LOOP** [WHILE|UNTIL cond]\n\nCloses a DO…LOOP block.",
-  IN: "**IN**(port)\n\nReads the state of a GPIO port.",
-  INPUT: "**INPUT** port\n\nSets the port to high‑Z input mode.",
-  OUT: "**OUT** port, value\n\nWrite logic 1 or 0 to the port.",
-  OUTPUT: "**OUTPUT** port\n\nSets the port mode to output.",
-  PRINT: "**PRINT** data\n\nPrint to output.",
-  LET: "**LET** var = expr\n\nAssign a value.",
-  IF: "**IF** cond **THEN** … [**ELSE** …] **ENDIF**\n\nConditional block.",
-  FOR: "**FOR** var = start **TO** end [**STEP** n] … **NEXT**\n\nCounting loop.",
+  DEBUG: "**Debug** data\n\nSends data to the debug terminal. Use `Dec`/`Hex` for formatted numbers and `CR`/`LF` for line control.",
+  DELAY: "**Delay** n\n\nPause for *n* milliseconds.",
+  DIM: "**Dim** name [ (dims) ] **As** type [ * length ]\n\nDeclare a variable or array. Types: Byte, Integer, Long, Single, String.",
+  DO: "**Do** [While|Until cond] … **Loop** [While|Until cond]\n\nCreates a loop; condition may appear on Do or Loop (not both).",
+  LOOP: "**Loop** [While|Until cond]\n\nCloses a Do…Loop block.",
+  IN: "**In**(port)\n\nReads the state of a GPIO port.",
+  INPUT: "**Input** port\n\nSets the port to high‑Z input mode.",
+  OUT: "**Out** port, value\n\nWrite logic 1 or 0 to the port.",
+  OUTPUT: "**Output** port\n\nSets the port mode to output.",
+  PRINT: "**Print** data\n\nPrint to output.",
+  LET: "**Let** var = expr\n\nAssign a value.",
+  IF: "**If** cond **Then** … [**Else** …] **End If**\n\nConditional block.",
+  FOR: "**For** var = start **To** end [**Step** n] … **Next**\n\nCounting loop.",
 };
 
 connection.listen();
+
