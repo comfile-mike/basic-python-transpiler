@@ -14,6 +14,12 @@
     "onLanguage:cubloc-basic"
   ],
   "contributes": {
+    "configurationDefaults": {
+      "explorer.fileNesting.enabled": true,
+      "explorer.fileNesting.patterns": {
+        "*.bas": "${capture}.bas.py"
+      }
+    },
     "languages": [
       {
         "id": "cubloc-basic",
