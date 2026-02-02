@@ -20,6 +20,87 @@
         "*.bas": "${capture}.bas.py"
       }
     },
+    "debuggers": [
+      {
+        "type": "cubloc-basic",
+        "label": "CUBLOC BASIC",
+        "program": "./debugAdapter.js",
+        "runtime": "node",
+        "languages": [
+          "cubloc-basic"
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "program",
+              "serialPort"
+            ],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Path to the .bas file to transpile and upload."
+              },
+              "serialPort": {
+                "type": "string",
+                "description": "Serial port for the device (for example COM3 or /dev/ttyUSB0)."
+              },
+              "remotePath": {
+                "type": "string",
+                "description": "Optional remote filename/path on the device. Defaults to main.py."
+              },
+              "runAfterUpload": {
+                "type": "boolean",
+                "default": true,
+                "description": "Run the uploaded file after it is copied to the device."
+              },
+              "stopCommand": {
+                "type": "string",
+                "default": "soft-reset",
+                "description": "mpremote command used to stop execution when the session is terminated."
+              },
+              "mpremotePath": {
+                "type": "string",
+                "description": "Optional path to the mpremote executable."
+              },
+              "mpremoteArgs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Additional arguments passed to mpremote before the connect command."
+              },
+              "cwd": {
+                "type": "string",
+                "description": "Working directory for mpremote."
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "cubloc-basic",
+            "request": "launch",
+            "name": "CUBLOC BASIC: Upload to device",
+            "program": "${file}",
+            "serialPort": "COM3"
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "CUBLOC BASIC: Upload to device",
+            "description": "Transpile the current .bas file and upload it using mpremote.",
+            "body": {
+              "type": "cubloc-basic",
+              "request": "launch",
+              "name": "CUBLOC BASIC: Upload to device",
+              "program": "${file}",
+              "serialPort": "COM3",
+              "runAfterUpload": true
+            }
+          }
+        ]
+      }
+    ],
     "languages": [
       {
         "id": "cubloc-basic",
