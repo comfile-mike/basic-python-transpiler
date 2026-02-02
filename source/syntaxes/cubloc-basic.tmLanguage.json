@@ -30,7 +30,7 @@
       "patterns": [
         {
           "name": "meta.preprocessor.cubloc-basic",
-          "match": "^\\s*(?i:(#\\s*(?:include|define|undef|if|elseif|else|endif|region|end\\s+region|pragma)\\b|\\$\\s*(?:include|dynamic|static|compile|error|lib)\\b)).*$"
+          "match": "^\\s*(?i:(#\\s*(?:include|define|undef|if|elseif|else|endif)\\b|\\$\\s*(?:include|dynamic|static|compile|error|lib)\\b)).*$"
         }
       ]
     },
@@ -53,10 +53,6 @@
 
     "comments": {
       "patterns": [
-        {
-          "name": "comment.line.rem.cubloc-basic",
-          "match": "(?i:\\bREM\\b).*$"
-        },
         {
           "name": "comment.line.apostrophe.cubloc-basic",
           "match": "'[^\"]*$"
