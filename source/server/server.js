@@ -36,7 +36,6 @@ connection.onInitialize(() => {
 
 connection.onCompletion(() => {
   return [
-    { label: "LET", kind: 14, detail: "Assign a value" },
     { label: "PRINT", kind: 14, detail: "Print to output" },
     { label: "INPUT", kind: 14, detail: "Set port to input mode" },
     { label: "DEBUG", kind: 14, detail: "Debug output" },

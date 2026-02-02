@@ -17,7 +17,7 @@
     "configurationDefaults": {
       "explorer.fileNesting.enabled": true,
       "explorer.fileNesting.patterns": {
-        "*.bas": "${capture}.bas.py"
+        "*.cub": "${capture}.cub.py"
       }
     },
     "debuggers": [
@@ -38,7 +38,7 @@
             "properties": {
               "program": {
                 "type": "string",
-                "description": "Path to the .bas file to transpile and upload."
+                "description": "Path to the .cub file to transpile and upload."
               },
               "serialPort": {
                 "type": "string",
@@ -88,7 +88,7 @@
         "configurationSnippets": [
           {
             "label": "CUBLOC BASIC: Upload to device",
-            "description": "Transpile the current .bas file and upload it using mpremote.",
+            "description": "Transpile the current .cub file and upload it using mpremote.",
             "body": {
               "type": "cubloc-basic",
               "request": "launch",
@@ -109,7 +109,7 @@
           "cubloc-basic"
         ],
         "extensions": [
-          ".bas"
+          ".cub"
         ],
         "configuration": "./language-configuration.json"
       }

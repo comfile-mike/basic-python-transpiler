@@ -160,7 +160,7 @@ function resolveLaunchArgs(args) {
   const programLower = programPath.toLowerCase();
   let pythonPath = programPath;
 
-  if (programLower.endsWith(".bas")) {
+  if (programLower.endsWith(".cub")) {
     pythonPath = `${programPath}.py`;
     const basText = fs.readFileSync(programPath, "utf8");
     const pythonText = transpileBasToPython(basText, programPath);

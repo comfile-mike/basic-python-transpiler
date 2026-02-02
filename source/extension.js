@@ -25,7 +25,7 @@ function activate(context) {
   const clientOptions = {
     documentSelector: [{ scheme: "file", language: "cubloc-basic" }],
     synchronize: {
-      fileEvents: vscode.workspace.createFileSystemWatcher("**/*.bas"),
+      fileEvents: vscode.workspace.createFileSystemWatcher("**/*.cub"),
     },
   };
 
@@ -74,7 +74,7 @@ function activate(context) {
           } else {
             const pick = await vscode.window.showOpenDialog({
               canSelectMany: false,
-              filters: { "CUBLOC BASIC": ["bas"] },
+              filters: { "CUBLOC BASIC": ["cub"] },
               title: "Select a CUBLOC BASIC file to upload",
             });
             if (!pick || pick.length === 0) {
@@ -207,7 +207,7 @@ function shouldTranspile(document) {
   if (document.uri.scheme !== "file") {
     return false;
   }
-  if (document.uri.path.endsWith(".bas.py")) {
+  if (document.uri.path.endsWith(".cub.py")) {
     return false;
   }
   return true;
