@@ -11,7 +11,6 @@
     { "include": "#declarations" },
     { "include": "#keywords" },
     { "include": "#types" },
-    { "include": "#constants" },
     { "include": "#functions" },
     { "include": "#operators" },
     { "include": "#labels" },
@@ -131,16 +130,7 @@
       "patterns": [
         {
           "name": "support.type.cubloc-basic",
-          "match": "(?i:\\b(?:integer|long|single|double|string|boolean|byte|short|date|variant|object)\\b)"
-        }
-      ]
-    },
-
-    "constants": {
-      "patterns": [
-        {
-          "name": "constant.language.cubloc-basic",
-          "match": "(?i:\\b(?:true|false|null|nothing)\\b)"
+          "match": "(?i:\\b(?:integer|long|single|byte|string)\\b)"
         }
       ]
     },
