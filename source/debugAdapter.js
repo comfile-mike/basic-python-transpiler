@@ -3,7 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 const { spawn } = require("child_process");
-const { transpileBasToPython } = require("./transpiler");
+const { transpileCubToPython } = require("./transpiler");
 
 let nextSeq = 1;
 let contentLength = null;
@@ -163,7 +163,7 @@ function resolveLaunchArgs(args) {
   if (programLower.endsWith(".cub")) {
     pythonPath = `${programPath}.py`;
     const basText = fs.readFileSync(programPath, "utf8");
-    const pythonText = transpileBasToPython(basText, programPath);
+    const pythonText = transpileCubToPython(basText, programPath);
     fs.writeFileSync(pythonPath, pythonText, "utf8");
   }
 

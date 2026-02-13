@@ -3,7 +3,7 @@
 const path = require("path");
 const vscode = require("vscode");
 const { LanguageClient, TransportKind } = require("vscode-languageclient/node");
-const { transpileBasToPython } = require("./transpiler");
+const { transpileCubToPython } = require("./transpiler");
 const { defaultLadderXml, getLadderWebviewHtml } = require("./ladderWebview");
 
 let client;
@@ -205,7 +205,7 @@ function scheduleTranspile(document) {
 
   transpileTimer = setTimeout(() => {
     transpileTimer = undefined;
-    transpileBasDocument(uri, text, controller.signal).catch((error) => {
+    transpileCubDocument(uri, text, controller.signal).catch((error) => {
       if (controller.signal.aborted) {
         return;
       }
@@ -227,12 +227,12 @@ function shouldTranspile(document) {
   return true;
 }
 
-async function transpileBasDocument(uri, text, signal) {
+async function transpileCubDocument(uri, text, signal) {
   if (signal.aborted) {
     return;
   }
 
-  const output = transpileBasToPython(text, uri.fsPath);
+  const output = transpileCubToPython(text, uri.fsPath);
   if (signal.aborted) {
     return;
   }

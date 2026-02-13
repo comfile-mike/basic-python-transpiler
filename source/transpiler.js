@@ -2,7 +2,7 @@
 
 const path = require("path");
 
-function transpileBasToPython(text, filePath) {
+function transpileCubToPython(text, filePath) {
   const lines = text.split(/\r?\n/);
   const basename = path.basename(filePath);
   const output = [
@@ -586,6 +586,6 @@ function findMatchingParen(text, openIndex) {
 }
 
 module.exports = {
-  transpileBasToPython,
+  transpileCubToPython,
 };
 
