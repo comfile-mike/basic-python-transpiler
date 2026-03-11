@@ -246,11 +246,6 @@
     <button class="icon-btn" title="Contact NO">| |</button>
     <button class="icon-btn" title="Contact NC">|/|</button>
     <button class="icon-btn" title="Coil">( )</button>
-    <button class="icon-btn" title="Timer">TON</button>
-    <button class="icon-btn" title="Counter">CTU</button>
-    <button class="icon-btn" title="Math">∑</button>
-    <button class="icon-btn" title="Compare">≥</button>
-    <button class="icon-btn" title="Move">MOV</button>
   </div>
   <div class="subbar">
     <button class="icon-btn" title="Delete">🗑</button>
@@ -340,11 +335,6 @@
       { type: "coil", label: "Coil", symbol: "--( )--" },
       { type: "latch", label: "Latch", symbol: "--(S)--" },
       { type: "unlatch", label: "Unlatch", symbol: "--(R)--" },
-      { type: "timer", label: "Timer (TON)", symbol: "[TON]" },
-      { type: "counter", label: "Counter (CTU)", symbol: "[CTU]" },
-      { type: "compare", label: "Compare", symbol: "[CMP]" },
-      { type: "math", label: "Math", symbol: "[MATH]" },
-      { type: "move", label: "Move", symbol: "[MOV]" },
     ];
 
     function ensureRung() {
@@ -570,16 +560,6 @@
                 } else if (el.type === "unlatch") {
                   addText(elementX, y, "R", 10, "middle");
                 }
-              } else if (el.type === "timer") {
-                addBlock(elementX, y, "TON");
-              } else if (el.type === "counter") {
-                addBlock(elementX, y, "CTU");
-              } else if (el.type === "compare") {
-                addBlock(elementX, y, "CMP");
-              } else if (el.type === "math") {
-                addBlock(elementX, y, "MATH");
-              } else if (el.type === "move") {
-                addBlock(elementX, y, "MOV");
               } else {
                 addBlock(elementX, y, "BLOCK");
               }
@@ -644,16 +624,6 @@
           return "Latch";
         case "unlatch":
           return "Unlatch";
-        case "timer":
-          return "Timer (TON)";
-        case "counter":
-          return "Counter (CTU)";
-        case "compare":
-          return "Compare";
-        case "math":
-          return "Math";
-        case "move":
-          return "Move";
         default:
           return element.type;
       }
@@ -861,17 +831,7 @@
       commentField.disabled = false;
       paramField.disabled = false;
 
-      if (element.type === "timer" || element.type === "counter") {
-        paramLabel.textContent = "Preset";
-      } else if (element.type === "compare") {
-        paramLabel.textContent = "Compare";
-      } else if (element.type === "math") {
-        paramLabel.textContent = "Expression";
-      } else if (element.type === "move") {
-        paramLabel.textContent = "Move";
-      } else {
-        paramLabel.textContent = "Parameter";
-      }
+      paramLabel.textContent = "Parameter";
     }
 
     document.getElementById("add-rung").addEventListener("click", () => addRung());
