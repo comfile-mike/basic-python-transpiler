@@ -252,6 +252,7 @@
     let model = { rungs: [] };
     let selectedTool = null;
     let selected = null;
+    let selectedPath = null;
     let nextElementId = 1;
 
     const TOOLBOX = [
@@ -261,6 +262,14 @@
       { type: "latch", label: "Latch", symbol: "--(S)--" },
       { type: "unlatch", label: "Unlatch", symbol: "--(R)--" },
     ];
+
+    function isContactType(type) {
+      return type === "contact-no" || type === "contact-nc";
+    }
+
+    function isCoilType(type) {
+      return type === "coil" || type === "latch" || type === "unlatch";
+    }
 
     function ensureRung() {
       if (model.rungs.length === 0) {
@@ -278,12 +287,21 @@
 
     function selectElement(rungId, pathId, elementId) {
       selected = { rungId, pathId, elementId };
+      selectedPath = { rungId, pathId };
+      render();
+      syncProperties();
+    }
+
+    function selectPath(rungId, pathId) {
+      selected = null;
+      selectedPath = { rungId, pathId };
       render();
       syncProperties();
     }
 
     function clearSelection() {
       selected = null;
+      selectedPath = null;
       render();
       syncProperties();
     }
@@ -375,59 +393,121 @@
         drawGroup.appendChild(label);
       };
 
-      const addSlot = (x, y, rungId, pathId, index) => {
-        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        circle.setAttribute("cx", x);
-        circle.setAttribute("cy", y);
-        circle.setAttribute("r", 8);
-        circle.setAttribute("fill", "transparent");
-        circle.setAttribute("stroke", muted);
-        circle.setAttribute("stroke-dasharray", "3 2");
-        circle.style.cursor = "pointer";
-        circle.addEventListener("click", () => {
-          if (!selectedTool) {
-            return;
-          }
-          insertElement(rungId, pathId, index, selectedTool);
-        });
-        drawGroup.appendChild(circle);
-
-        const plus = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        plus.setAttribute("x", x);
-        plus.setAttribute("y", y + 1);
-        plus.setAttribute("fill", muted);
-        plus.setAttribute("font-size", "10");
-        plus.setAttribute("text-anchor", "middle");
-        plus.setAttribute("dominant-baseline", "middle");
-        plus.textContent = "+";
-        drawGroup.appendChild(plus);
-      };
-
       const addContact = (x, y, type) => {
-        addLine(x - 16, y, x - 4, y);
-        addLine(x + 4, y, x + 16, y);
-        addLine(x - 4, y - 10, x - 4, y + 10);
-        addLine(x + 4, y - 10, x + 4, y + 10);
+        const leadOuter = 16;
+        const halfGap = 4;
+        const halfHeight = 10;
+        addLine(x - leadOuter, y, x - halfGap, y);
+        addLine(x + halfGap, y, x + leadOuter, y);
+        addLine(x - halfGap, y - halfHeight, x - halfGap, y + halfHeight);
+        addLine(x + halfGap, y - halfHeight, x + halfGap, y + halfHeight);
         if (type === "contact-nc") {
           addLine(x - 6, y - 12, x + 6, y + 12);
         }
       };
 
       const addCoil = (x, y) => {
-        addLine(x - 18, y, x - 8, y);
-        addLine(x + 8, y, x + 18, y);
+        const leadOuter = 16;
+        const halfGap = 4;
+        const halfHeight = 10;
+        const curveOuter = 12;
+        const leadInner = (halfGap + curveOuter) / 2;
+        addLine(x - leadOuter, y, x - leadInner, y);
+        addLine(x + leadInner, y, x + leadOuter, y);
         const left = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        left.setAttribute("d", "M " + (x - 8) + " " + (y - 12) + " A 12 12 0 0 1 " + (x - 8) + " " + (y + 12));
+        left.setAttribute(
+          "d",
+          "M " +
+            (x - halfGap) +
+            " " +
+            (y - halfHeight) +
+            " Q " +
+            (x - curveOuter) +
+            " " +
+            y +
+            ", " +
+            (x - halfGap) +
+            " " +
+            (y + halfHeight)
+        );
         left.setAttribute("stroke", stroke);
         left.setAttribute("stroke-width", "2");
         left.setAttribute("fill", "none");
         drawGroup.appendChild(left);
+
         const right = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        right.setAttribute("d", "M " + (x + 8) + " " + (y - 12) + " A 12 12 0 0 0 " + (x + 8) + " " + (y + 12));
+        right.setAttribute(
+          "d",
+          "M " +
+            (x + halfGap) +
+            " " +
+            (y - halfHeight) +
+            " Q " +
+            (x + curveOuter) +
+            " " +
+            y +
+            ", " +
+            (x + halfGap) +
+            " " +
+            (y + halfHeight)
+        );
         right.setAttribute("stroke", stroke);
         right.setAttribute("stroke-width", "2");
         right.setAttribute("fill", "none");
         drawGroup.appendChild(right);
+      };
+
+      const getElementWireBounds = (elementX, type) => {
+        if (
+          isContactType(type) ||
+          isCoilType(type)
+        ) {
+          return { left: elementX - 16, right: elementX + 16 };
+        }
+        return { left: elementX - 29, right: elementX + 29 };
+      };
+
+      const layoutPathElements = (elements, rightRailX) => {
+        const spacing = elementWidth + elementGap;
+        const edgeOffset = startX + elementWidth / 2 - leftRailX;
+        const leftBase = leftRailX + edgeOffset;
+        const rightBase = rightRailX - edgeOffset;
+
+        const contacts = [];
+        const others = [];
+        const coils = [];
+
+        for (const element of elements) {
+          if (isContactType(element.type)) {
+            contacts.push(element);
+          } else if (isCoilType(element.type)) {
+            coils.push(element);
+          } else {
+            others.push(element);
+          }
+        }
+
+        const positions = new Map();
+        let leftIndex = 0;
+        for (const element of contacts) {
+          positions.set(element.id, leftBase + leftIndex * spacing);
+          leftIndex += 1;
+        }
+        for (const element of others) {
+          positions.set(element.id, leftBase + leftIndex * spacing);
+          leftIndex += 1;
+        }
+
+        let rightIndex = 0;
+        for (const element of coils) {
+          positions.set(element.id, rightBase - rightIndex * spacing);
+          rightIndex += 1;
+        }
+
+        return elements.map((element) => ({
+          element,
+          elementX: positions.get(element.id),
+        }));
       };
 
       const addBlock = (x, y, label, width = 58, height = 30) => {
@@ -463,63 +543,89 @@
         let pathIndex = 0;
         for (const path of rung.paths) {
           const y = rungTop + 20 + pathIndex * pathGap;
-          addLine(leftRailX, y, rightRailX, y, 2);
 
-          let cursorX = startX;
-          for (let i = 0; i <= path.elements.length; i += 1) {
-            addSlot(cursorX - elementGap / 2, y, rung.id, path.id, i);
-            if (i < path.elements.length) {
-              const el = path.elements[i];
-              const elementX = cursorX + elementWidth / 2;
-              const isSelected =
-                selected &&
-                selected.rungId === rung.id &&
-                selected.pathId === path.id &&
-                selected.elementId === el.id;
-              if (el.type === "contact-no" || el.type === "contact-nc") {
-                addContact(elementX, y, el.type);
-              } else if (el.type === "coil" || el.type === "latch" || el.type === "unlatch") {
-                addCoil(elementX, y);
-                if (el.type === "latch") {
-                  addText(elementX, y, "S", 10, "middle");
-                } else if (el.type === "unlatch") {
-                  addText(elementX, y, "R", 10, "middle");
-                }
-              } else {
-                addBlock(elementX, y, "BLOCK");
+          const pathIsSelected =
+            selectedPath &&
+            selectedPath.rungId === rung.id &&
+            selectedPath.pathId === path.id;
+
+          const laidOutElements = layoutPathElements(path.elements, rightRailX);
+          const wireOrder = [...laidOutElements].sort((a, b) => a.elementX - b.elementX);
+
+          let wireStart = leftRailX;
+          for (const item of wireOrder) {
+            const bounds = getElementWireBounds(item.elementX, item.element.type);
+            addLine(wireStart, y, bounds.left, y, pathIsSelected ? 3 : 2);
+            wireStart = bounds.right;
+          }
+          addLine(wireStart, y, rightRailX, y, pathIsSelected ? 3 : 2);
+
+          const pathHitbox = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+          pathHitbox.setAttribute("x", leftRailX);
+          pathHitbox.setAttribute("y", y - 12);
+          pathHitbox.setAttribute("width", rightRailX - leftRailX);
+          pathHitbox.setAttribute("height", 24);
+          pathHitbox.setAttribute("fill", "transparent");
+          pathHitbox.style.cursor = selectedTool ? "copy" : "pointer";
+          pathHitbox.addEventListener("click", (event) => {
+            event.stopPropagation();
+            if (selectedTool) {
+              insertElement(rung.id, path.id, path.elements.length, selectedTool);
+              return;
+            }
+            selectPath(rung.id, path.id);
+          });
+          drawGroup.appendChild(pathHitbox);
+
+          for (const item of laidOutElements) {
+            const el = item.element;
+            const elementX = item.elementX;
+            const isSelected =
+              selected &&
+              selected.rungId === rung.id &&
+              selected.pathId === path.id &&
+              selected.elementId === el.id;
+            if (isContactType(el.type)) {
+              addContact(elementX, y, el.type);
+            } else if (isCoilType(el.type)) {
+              addCoil(elementX, y);
+              if (el.type === "latch") {
+                addText(elementX, y, "S", 10, "middle");
+              } else if (el.type === "unlatch") {
+                addText(elementX, y, "R", 10, "middle");
               }
+            } else {
+              addBlock(elementX, y, "BLOCK");
+            }
 
-              const tagText = el.tag || "";
-              if (tagText) {
-                addText(elementX, y - textOffset, tagText, 11, "middle");
-              }
+            const tagText = el.tag || "";
+            if (tagText) {
+              addText(elementX, y - textOffset, tagText, 11, "middle");
+            }
 
-              const clickZone = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-              clickZone.setAttribute("x", elementX - elementWidth / 2);
-              clickZone.setAttribute("y", y - 20);
-              clickZone.setAttribute("width", elementWidth);
-              clickZone.setAttribute("height", 40);
-              clickZone.setAttribute("fill", "transparent");
-              clickZone.style.cursor = "pointer";
-              clickZone.addEventListener("click", (event) => {
-                event.stopPropagation();
-                selectElement(rung.id, path.id, el.id);
-              });
-              drawGroup.appendChild(clickZone);
+            const clickZone = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            clickZone.setAttribute("x", elementX - elementWidth / 2);
+            clickZone.setAttribute("y", y - 20);
+            clickZone.setAttribute("width", elementWidth);
+            clickZone.setAttribute("height", 40);
+            clickZone.setAttribute("fill", "transparent");
+            clickZone.style.cursor = "pointer";
+            clickZone.addEventListener("click", (event) => {
+              event.stopPropagation();
+              selectElement(rung.id, path.id, el.id);
+            });
+            drawGroup.appendChild(clickZone);
 
-              if (isSelected) {
-                const outline = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-                outline.setAttribute("x", elementX - elementWidth / 2);
-                outline.setAttribute("y", y - 22);
-                outline.setAttribute("width", elementWidth);
-                outline.setAttribute("height", 44);
-                outline.setAttribute("fill", "none");
-                outline.setAttribute("stroke", "var(--ladder-highlight)");
-                outline.setAttribute("stroke-width", "2");
-                drawGroup.appendChild(outline);
-              }
-
-              cursorX += elementWidth + elementGap;
+            if (isSelected) {
+              const outline = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+              outline.setAttribute("x", elementX - elementWidth / 2);
+              outline.setAttribute("y", y - 22);
+              outline.setAttribute("width", elementWidth);
+              outline.setAttribute("height", 44);
+              outline.setAttribute("fill", "none");
+              outline.setAttribute("stroke", "var(--ladder-highlight)");
+              outline.setAttribute("stroke-width", "2");
+              drawGroup.appendChild(outline);
             }
           }
           pathIndex += 1;
@@ -601,7 +707,26 @@
         param: "",
       };
       nextElementId += 1;
-      path.elements.splice(index, 0, element);
+
+      let insertAt = index;
+      const typeIsContact = isContactType(type);
+      const typeIsCoil = isCoilType(type);
+
+      if (typeIsCoil) {
+        insertAt = path.elements.length;
+      } else if (typeIsContact) {
+        insertAt = path.elements.findIndex((el) => !isContactType(el.type));
+        if (insertAt < 0) {
+          insertAt = path.elements.length;
+        }
+      } else {
+        insertAt = path.elements.findIndex((el) => isCoilType(el.type));
+        if (insertAt < 0) {
+          insertAt = path.elements.length;
+        }
+      }
+
+      path.elements.splice(insertAt, 0, element);
       selectElement(rungId, pathId, element.id);
       sendUpdate();
     }
@@ -761,7 +886,11 @@
 
     document.getElementById("add-rung").addEventListener("click", () => addRung());
     document.getElementById("add-branch").addEventListener("click", () => {
-      const target = selected ? selected.rungId : model.rungs[model.rungs.length - 1]?.id;
+      const target = selected
+        ? selected.rungId
+        : selectedPath
+        ? selectedPath.rungId
+        : model.rungs[model.rungs.length - 1]?.id;
       if (target) {
         addBranch(target);
       }
