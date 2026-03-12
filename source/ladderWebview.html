@@ -19,7 +19,7 @@
       margin: 0;
       height: 100vh;
       display: grid;
-      grid-template-rows: 1fr 28px;
+      grid-template-rows: 1fr;
       background: var(--vscode-editor-background);
       color: var(--vscode-editor-foreground);
     }
@@ -182,15 +182,6 @@
       padding: 6px 8px;
       font-size: 12px;
     }
-    .footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 4px 12px;
-      font-size: 11px;
-      border-top: 1px solid var(--vscode-editorWidget-border);
-      background: var(--vscode-sideBar-background);
-    }
   </style>
 </head>
 <body>
@@ -256,10 +247,6 @@
       <div id="diagram"></div>
     </main>
   </div>
-    <div class="footer">
-      <div>ABOUT</div>
-      <div></div>
-    </div>
   <script nonce="__NONCE__">
     const vscode = acquireVsCodeApi();
     let model = { rungs: [] };
