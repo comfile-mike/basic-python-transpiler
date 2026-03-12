@@ -32,7 +32,8 @@
       border-right: 1px solid var(--vscode-editorWidget-border);
       background: var(--vscode-sideBar-background);
       display: grid;
-      grid-template-rows: 1fr auto;
+      grid-template-rows: auto auto;
+      align-content: start;
       min-height: 0;
     }
     .splitter {
@@ -49,7 +50,7 @@
       padding: 12px;
       display: grid;
       gap: 10px;
-      overflow: auto;
+      overflow: visible;
     }
     .panel-section h2 {
       font-size: 12px;

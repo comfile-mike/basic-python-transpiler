@@ -252,11 +252,34 @@ module.exports = {
 };
 
 class LadderDiagramDocument {
-  constructor(uri, xml) {
+  constructor(uri, xml, watcher) {
     this.uri = uri;
     this._xml = xml;
+    this._watcher = watcher;
     this._onDidDispose = new vscode.EventEmitter();
     this._onDidChangeContent = new vscode.EventEmitter();
+
+    if (this._watcher) {
+      this._watcher.onDidChange(() => {
+        this.reloadFromDisk().catch((error) => {
+          console.error("Failed to refresh ladder document after external change:", error);
+        });
+      });
+
+      this._watcher.onDidCreate(() => {
+        this.reloadFromDisk().catch((error) => {
+          console.error("Failed to refresh ladder document after external create:", error);
+        });
+      });
+
+      this._watcher.onDidDelete(() => {
+        const fallback = defaultLadderXml();
+        if (this._xml !== fallback) {
+          this._xml = fallback;
+          this._onDidChangeContent.fire(this);
+        }
+      });
+    }
   }
 
   static async create(uri) {
@@ -268,7 +291,15 @@ class LadderDiagramDocument {
     } catch (error) {
       // If the file doesn't exist yet, start with the default XML.
     }
-    return new LadderDiagramDocument(uri, xml);
+
+    let watcher;
+    if (uri.scheme === "file") {
+      watcher = vscode.workspace.createFileSystemWatcher(
+        new vscode.RelativePattern(path.dirname(uri.fsPath), path.basename(uri.fsPath))
+      );
+    }
+
+    return new LadderDiagramDocument(uri, xml, watcher);
   }
 
   get xml() {
@@ -280,10 +311,32 @@ class LadderDiagramDocument {
     this._onDidChangeContent.fire(this);
   }
 
+  async reloadFromDisk() {
+    let xml = defaultLadderXml();
+    try {
+      const raw = await vscode.workspace.fs.readFile(this.uri);
+      const text = Buffer.from(raw).toString("utf8");
+      xml = text.trim() ? text : defaultLadderXml();
+    } catch (error) {
+      xml = defaultLadderXml();
+    }
+
+    if (xml === this._xml) {
+      return;
+    }
+
+    this._xml = xml;
+    this._onDidChangeContent.fire(this);
+  }
+
   dispose() {
     this._onDidDispose.fire();
     this._onDidDispose.dispose();
     this._onDidChangeContent.dispose();
+    if (this._watcher) {
+      this._watcher.dispose();
+      this._watcher = undefined;
+    }
   }
 
   get onDidDispose() {
