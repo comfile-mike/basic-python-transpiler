@@ -19,50 +19,9 @@
       margin: 0;
       height: 100vh;
       display: grid;
-      grid-template-rows: 44px 40px 1fr 28px;
+      grid-template-rows: 1fr 28px;
       background: var(--vscode-editor-background);
       color: var(--vscode-editor-foreground);
-    }
-    .topbar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 10px;
-      background: var(--vscode-titleBar-activeBackground);
-      border-bottom: 1px solid var(--vscode-titleBar-border, var(--vscode-editorWidget-border));
-    }
-    .topbar .icon-btn,
-    .subbar .icon-btn {
-      width: 30px;
-      height: 30px;
-      display: grid;
-      place-items: center;
-      border-radius: 6px;
-      border: 1px solid var(--vscode-editorWidget-border);
-      background: var(--vscode-button-secondaryBackground);
-      color: var(--vscode-button-secondaryForeground);
-      cursor: pointer;
-    }
-    .topbar .spacer {
-      flex: 1;
-    }
-    .subbar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 10px;
-      background: color-mix(in srgb, var(--vscode-titleBar-activeBackground) 65%, var(--vscode-editor-background) 35%);
-      border-bottom: 1px solid var(--vscode-editorWidget-border);
-    }
-    .subbar .run-btn {
-      width: 36px;
-      height: 30px;
-      border-radius: 6px;
-      border: 1px solid var(--vscode-button-border, transparent);
-      background: var(--vscode-testing-iconPassed, #2ea043);
-      color: #ffffff;
-      cursor: pointer;
-      font-weight: 600;
     }
     .content {
       display: grid;
@@ -235,28 +194,7 @@
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <button class="icon-btn" title="Undo">↶</button>
-    <button class="icon-btn" title="Redo">↷</button>
-    <button class="icon-btn" title="New">📄</button>
-    <button class="icon-btn" title="Open">📂</button>
-    <button class="icon-btn" title="Share">🔗</button>
-    <button class="icon-btn" title="Help">?</button>
-    <div class="spacer"></div>
-    <button class="icon-btn" title="Contact NO">| |</button>
-    <button class="icon-btn" title="Contact NC">|/|</button>
-    <button class="icon-btn" title="Coil">( )</button>
-  </div>
-  <div class="subbar">
-    <button class="icon-btn" title="Delete">🗑</button>
-    <button class="icon-btn" title="Move Up">↑</button>
-    <button class="icon-btn" title="Move Down">↓</button>
-    <button class="icon-btn" title="Move Left">←</button>
-    <button class="icon-btn" title="Move Right">→</button>
-    <button class="icon-btn" title="Edit">✎</button>
-    <button class="run-btn" title="Run">▶</button>
-  </div>
-    <div class="content" id="layout-root">
+  <div class="content" id="layout-root">
       <aside class="left-panel">
       <div class="panel-section">
         <h2>Variables</h2>

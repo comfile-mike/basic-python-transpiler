@@ -11,6 +11,7 @@ let transpileController;
 let transpileTimer;
 let debugProvider;
 let ladderProvider;
+let ladderBreadcrumbController;
 
 function activate(context) {
   const serverModule = context.asAbsolutePath(path.join("server", "server.js"));
@@ -117,6 +118,9 @@ function activate(context) {
       }
     )
   );
+
+  ladderBreadcrumbController = new LadderBreadcrumbController();
+  context.subscriptions.push(ladderBreadcrumbController);
 }
 
 function deactivate() {
@@ -392,6 +396,114 @@ class LadderDiagramEditorProvider {
         }
       },
     };
+  }
+}
+
+class LadderBreadcrumbController {
+  constructor() {
+    this._isApplying = false;
+    this._isForcedOff = false;
+    this._hasStoredValue = false;
+    this._previousEnabled = undefined;
+    this._disposables = [];
+
+    this._disposables.push(
+      vscode.window.tabGroups.onDidChangeTabs(() => {
+        this.refresh();
+      })
+    );
+
+    this._disposables.push(
+      vscode.window.onDidChangeActiveTextEditor(() => {
+        this.refresh();
+      })
+    );
+
+    this.refresh();
+  }
+
+  async refresh() {
+    if (this._isApplying) {
+      return;
+    }
+
+    const ladderActive = this.isLadderEditorActive();
+    const config = vscode.workspace.getConfiguration("breadcrumbs");
+
+    if (ladderActive) {
+      if (!this._hasStoredValue) {
+        this._previousEnabled = config.get("enabled");
+        this._hasStoredValue = true;
+      }
+      if (config.get("enabled") === false) {
+        this._isForcedOff = true;
+        return;
+      }
+      this._isApplying = true;
+      try {
+        await config.update("enabled", false, vscode.ConfigurationTarget.Workspace);
+        this._isForcedOff = true;
+      } finally {
+        this._isApplying = false;
+      }
+      return;
+    }
+
+    if (!this._isForcedOff) {
+      return;
+    }
+
+    this._isApplying = true;
+    try {
+      await config.update(
+        "enabled",
+        this._previousEnabled,
+        vscode.ConfigurationTarget.Workspace
+      );
+      this._isForcedOff = false;
+      this._hasStoredValue = false;
+      this._previousEnabled = undefined;
+    } finally {
+      this._isApplying = false;
+    }
+  }
+
+  isLadderEditorActive() {
+    const activeGroup = vscode.window.tabGroups.activeTabGroup;
+    const activeTab = activeGroup ? activeGroup.activeTab : undefined;
+    if (!activeTab || !activeTab.input) {
+      return false;
+    }
+
+    const customInput = activeTab.input;
+    return (
+      customInput instanceof vscode.TabInputCustom &&
+      customInput.viewType === LadderDiagramEditorProvider.viewType
+    );
+  }
+
+  dispose() {
+    const tasks = [];
+
+    if (this._isForcedOff) {
+      const config = vscode.workspace.getConfiguration("breadcrumbs");
+      tasks.push(
+        config.update(
+          "enabled",
+          this._previousEnabled,
+          vscode.ConfigurationTarget.Workspace
+        )
+      );
+    }
+
+    for (const disposable of this._disposables) {
+      disposable.dispose();
+    }
+    this._disposables = [];
+
+    if (tasks.length > 0) {
+      Promise.allSettled(tasks);
+    }
   }
 }
 
